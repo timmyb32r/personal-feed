@@ -2,17 +2,18 @@ package server
 
 import (
 	"github.com/sirupsen/logrus"
+	"personal-feed/pkg/config"
 	"personal-feed/pkg/crawlers"
-	"personal-feed/pkg/db/pg"
 	"personal-feed/pkg/engine"
+	"personal-feed/pkg/repo"
 )
 
 type Server struct {
-	config     *Config
+	config     *config.Config
 	httpServer *HTTPServer
 }
 
-func NewServer(config *Config) *Server {
+func NewServer(config *config.Config) *Server {
 	httpServer := NewHTTPServer(config)
 
 	go func() {
@@ -30,17 +31,17 @@ func (s *Server) Close() {
 }
 
 func (s *Server) RunIteration(logger *logrus.Logger) error {
-	pgConfig := pg.NewConfig(s.config.DBUser, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBName, true)
-	pgClient, err := pg.NewPgClient(pgConfig)
+	//pgConfig := pg2.NewConfig(s.config.DBUser, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBName, true)
+	currRepo, err := repo.NewRepo(s.config.Repo)
 	if err != nil {
 		return err
 	}
 
-	tx, err := pgClient.NewTx()
+	tx, err := currRepo.NewTx()
 	if err != nil {
 		return err
 	}
-	sources, err := pgClient.ListSources(tx)
+	sources, err := currRepo.ListSources(tx)
 	if err != nil {
 		return err
 	}
@@ -48,15 +49,19 @@ func (s *Server) RunIteration(logger *logrus.Logger) error {
 	// TODO - add scheduler
 
 	for _, source := range sources {
+		logger.Infof("RunIteration::start id:%d\n", source.ID)
+
 		currCrawler, err := crawlers.NewCrawler(source, logger)
 		if err != nil {
 			return err
 		}
-		currEngine := engine.NewEngine(source, currCrawler, pgClient)
+		currEngine := engine.NewEngine(source, currCrawler, currRepo)
 		err = currEngine.RunOnce()
 		if err != nil {
 			return err
 		}
+
+		logger.Infof("RunIteration::end id:%d\n", source.ID)
 	}
 	return nil
 }

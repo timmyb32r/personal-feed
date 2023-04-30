@@ -7,20 +7,20 @@ import (
 	"testing"
 )
 
-func TestPgClient(t *testing.T) {
+func TestRepo(t *testing.T) {
 	t.Skip()
 
 	sourceID := 1
 
 	cfg := NewConfig("?", "?", "?", 6432, "?", true)
-	client, err := NewPgClient(cfg)
+	client, err := NewRepo(cfg)
 	require.NoError(t, err)
 
-	//---
-	// prepare db
-
-	_, err = client.conn.Exec(context.Background(), "delete from events;")
-	require.NoError(t, err)
+	////---
+	//// prepare db
+	//
+	//_, err = client.conn.Exec(context.Background(), "delete from events;")
+	//require.NoError(t, err)
 
 	//---
 	// insert 1 row

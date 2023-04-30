@@ -3,8 +3,9 @@ package main
 import (
 	"github.com/akamensky/argparse"
 	"github.com/sirupsen/logrus"
-	"net/url"
 	"os"
+	"personal-feed/pkg/config"
+	_ "personal-feed/pkg/repo/registry"
 	"personal-feed/pkg/server"
 	"time"
 )
@@ -21,14 +22,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := server.LoadConfig(*configPath)
+	configFile, err := os.Open(*configPath)
+	if err != nil {
+		logger.Fatalf("unable to open file: %s", *configPath)
+	}
+	currConfig, err := config.Load(configFile)
 	if err != nil {
 		logger.Errorf("unable to load config: %s" + err.Error())
 		os.Exit(1)
 	}
-	config.DBPassword = url.QueryEscape(config.DBPassword) // postgres driver requires urlencode everything
 
-	currServer := server.NewServer(config)
+	currServer := server.NewServer(currConfig)
 	defer currServer.Close()
 
 	for {
