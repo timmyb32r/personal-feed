@@ -152,7 +152,7 @@ func (c *Repo) Close() error {
 }
 
 func NewRepo(cfg interface{}) (repo.Repo, error) {
-	cfgUnwrapped := cfg.(*RepoConfig) // unpack
+	cfgUnwrapped := cfg.(*RepoConfigPG) // unpack
 	conn, err := pgx.Connect(context.Background(), cfgUnwrapped.ToConnString())
 	if err != nil {
 		return nil, xerrors.Errorf("unable to connect to the database, err: %w", err)
