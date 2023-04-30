@@ -19,5 +19,5 @@ func TestConfig(t *testing.T) {
 	currConfig, err := config.Load(yamlReader)
 	require.NoError(t, err)
 	require.Equal(t, "RepoConfigPG", util.GetStructName(currConfig.Repo))
-	require.Equal(t, "my_host", currConfig.Repo.(*RepoConfigPG).DBHost)
+	require.Equal(t, "my_host", currConfig.Repo.(*RepoConfigPG).Host)
 }

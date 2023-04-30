@@ -31,7 +31,7 @@ func (s *Server) Close() {
 }
 
 func (s *Server) RunIteration(logger *logrus.Logger) error {
-	//pgConfig := pg2.NewConfig(s.config.DBUser, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBName, true)
+	//pgConfig := pg2.NewConfig(s.config.User, s.config.Password, s.config.Host, s.config.Port, s.config.Name, true)
 	currRepo, err := repo.NewRepo(s.config.Repo)
 	if err != nil {
 		return err
