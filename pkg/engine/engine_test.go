@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	youtube "personal-feed/pkg/crawlers/youtube"
-	"personal-feed/pkg/db/in_memory"
+	"personal-feed/pkg/db/registry/in_memory"
 	"personal-feed/pkg/model"
 	"testing"
 )

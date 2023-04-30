@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"personal-feed/pkg/db/pg"
+	"personal-feed/pkg/config"
+	"personal-feed/pkg/repo"
 	"strings"
 	"sync"
 	"syscall"
@@ -17,13 +18,13 @@ import (
 )
 
 type HTTPServer struct {
-	config      *Config
+	config      *config.Config
 	httpServer  http.Server
 	shutdownReq chan bool
 	once        sync.Once
 }
 
-func NewHTTPServer(config *Config) *HTTPServer {
+func NewHTTPServer(config *config.Config) *HTTPServer {
 	s := &HTTPServer{
 		config: config,
 		httpServer: http.Server{
@@ -78,20 +79,19 @@ func (s *HTTPServer) shutdown() {
 }
 
 func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
-	pgConfig := pg.NewConfig(s.config.DBUser, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBName, true)
-	pgClient, err := pg.NewPgClient(pgConfig)
+	repoClient, err := repo.NewRepo(s.config.Repo)
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
 		return
 	}
 
-	tx, err := pgClient.NewTx()
+	tx, err := repoClient.NewTx()
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error1::%s", err.Error())))
 		return
 	}
 
-	nodes, err := pgClient.TestExtractAllTreeNodes(tx)
+	nodes, err := repoClient.TestExtractAllTreeNodes(tx)
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error2::%s", err.Error())))
 		return

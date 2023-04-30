@@ -6,15 +6,16 @@ import (
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/model"
+	"personal-feed/pkg/repo"
 	"strings"
 	"time"
 )
 
-type PgClient struct {
+type Repo struct {
 	conn *pgx.Conn
 }
 
-func (c *PgClient) NewTx() (model.Tx, error) {
+func (c *Repo) NewTx() (repo.Tx, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
@@ -25,7 +26,7 @@ func (c *PgClient) NewTx() (model.Tx, error) {
 	return tx, err
 }
 
-func (c *PgClient) GetUserInfo(tx model.Tx, userEmail string) (*model.User, error) {
+func (c *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -49,14 +50,14 @@ func (c *PgClient) GetUserInfo(tx model.Tx, userEmail string) (*model.User, erro
 	return user, nil
 }
 
-func (c *PgClient) UpdateUserInfo(tx model.Tx, userEmail string, user *model.User) error {
+func (c *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) error {
 	query := `UPDATE users SET tg_chat_id=$1, nickname=$2, pass_hash=$3 WHERE email=$4;`
 	unwrappedTx := tx.(pgx.Tx)
 	_, err := unwrappedTx.Exec(context.Background(), query, user.TgChatID, user.Nickname, user.PassHash, userEmail)
 	return err
 }
 
-func (c *PgClient) ListSources(tx model.Tx) ([]model.Source, error) {
+func (c *Repo) ListSources(tx repo.Tx) ([]model.Source, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -80,7 +81,10 @@ func (c *PgClient) ListSources(tx model.Tx) ([]model.Source, error) {
 	return result, nil
 }
 
-func (c *PgClient) InsertNewTreeNodes(tx model.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (c *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+	if len(nodes) == 0 {
+		return nil
+	}
 	elems := make([]string, 0, len(nodes))
 	args := make([]interface{}, 0, len(nodes)*4)
 	index := 1
@@ -95,7 +99,7 @@ func (c *PgClient) InsertNewTreeNodes(tx model.Tx, sourceID int, nodes []model.D
 	return err
 }
 
-func (c *PgClient) ExtractTreeNodes(tx model.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (c *Repo) ExtractTreeNodes(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -119,7 +123,7 @@ func (c *PgClient) ExtractTreeNodes(tx model.Tx, sourceID int) ([]model.DBTreeNo
 	return result, nil
 }
 
-func (c *PgClient) TestExtractAllTreeNodes(tx model.Tx) ([]model.DBTreeNode, error) {
+func (c *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -143,16 +147,21 @@ func (c *PgClient) TestExtractAllTreeNodes(tx model.Tx) ([]model.DBTreeNode, err
 	return result, nil
 }
 
-func (c *PgClient) Close() error {
+func (c *Repo) Close() error {
 	return c.conn.Close(context.Background())
 }
 
-func NewPgClient(cfg *config) (*PgClient, error) {
-	conn, err := pgx.Connect(context.Background(), cfg.ToConnString())
+func NewRepo(cfg interface{}) (repo.Repo, error) {
+	cfgUnwrapped := cfg.(*RepoConfig) // unpack
+	conn, err := pgx.Connect(context.Background(), cfgUnwrapped.ToConnString())
 	if err != nil {
 		return nil, xerrors.Errorf("unable to connect to the database, err: %w", err)
 	}
-	return &PgClient{
+	return &Repo{
 		conn: conn,
 	}, nil
+}
+
+func init() {
+	repo.Register(NewRepo, &RepoConfigPG{})
 }
