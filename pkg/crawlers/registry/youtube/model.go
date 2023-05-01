@@ -1,4 +1,10 @@
-package model
+package youtube
+
+import "personal-feed/pkg/model"
+
+const (
+	CrawlerTypeYoutube = 1
+)
 
 type ContentSourceYoutubePlaylist struct {
 	YoutubePlaylistID    string
@@ -24,8 +30,8 @@ func (p *ContentSourceYoutubeVideo) ID() string {
 //---
 
 type YoutubeClient interface {
-	ListPlaylists(channelID string) ([]IDable, error) // channel -> []ContentSourceYoutubePlaylist
-	ListPlaylist(playlistID string) ([]IDable, error) // ContentSourceYoutubePlaylist -> []ContentSourceYoutubeVideo
+	ListPlaylists(channelID string) ([]model.IDable, error) // channel -> []ContentSourceYoutubePlaylist
+	ListPlaylist(playlistID string) ([]model.IDable, error) // ContentSourceYoutubePlaylist -> []ContentSourceYoutubeVideo
 }
 
 //---

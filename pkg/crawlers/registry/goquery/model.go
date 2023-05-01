@@ -1,4 +1,8 @@
-package model
+package goquery
+
+const (
+	CrawlerTypeCommonGoparse = 2
+)
 
 type CommonGoparseSourceItem struct {
 	Query string

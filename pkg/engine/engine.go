@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"golang.org/x/xerrors"
+	"personal-feed/pkg/crawlers"
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
 	"personal-feed/pkg/tree"
@@ -10,7 +11,7 @@ import (
 
 type Engine struct {
 	source  model.Source
-	crawler model.Crawler
+	crawler crawlers.Crawler
 	db      repo.Repo
 }
 
@@ -77,7 +78,7 @@ func (e *Engine) RunOnce() error {
 	return tx.Commit(context.Background())
 }
 
-func NewEngine(source model.Source, crawler model.Crawler, db repo.Repo) *Engine {
+func NewEngine(source model.Source, crawler crawlers.Crawler, db repo.Repo) *Engine {
 	return &Engine{
 		source:  source,
 		crawler: crawler,

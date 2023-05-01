@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"personal-feed/pkg/config"
+	_ "personal-feed/pkg/crawlers/registry"
 	_ "personal-feed/pkg/repo/registry"
 	"personal-feed/pkg/server"
 	"time"
@@ -40,7 +41,7 @@ func main() {
 		if err != nil {
 			logger.Errorf("server returned error: %s" + err.Error())
 		} else {
-			logger.Errorf("server returned execution from RunIteration()")
+			logger.Info("server returned execution from RunIteration()")
 		}
 		if isOnce != nil && *isOnce {
 			break

@@ -1,4 +1,4 @@
-package clients
+package youtube
 
 import (
 	"github.com/PuerkitoBio/goquery"

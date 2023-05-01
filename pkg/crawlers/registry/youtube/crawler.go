@@ -1,27 +1,28 @@
-package youtube_old
+package youtube
 
 import (
+	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
-	"personal-feed/pkg/clients"
+	"personal-feed/pkg/crawlers"
 	"personal-feed/pkg/model"
 )
 
 type Crawler struct {
 	logger        *logrus.Logger
-	youtubeClient model.YoutubeClient
-	youtubeSource model.YoutubeSource
+	youtubeClient YoutubeClient
+	youtubeSource *YoutubeSource
 	channelID     string
 }
 
 func (c *Crawler) CrawlerType() int {
-	return model.CrawlerTypeYoutube
+	return CrawlerTypeYoutube
 }
 
 func (c *Crawler) Layers() []model.IDable {
 	return []model.IDable{
-		&model.ContentSourceYoutubePlaylist{},
-		&model.ContentSourceYoutubeVideo{},
+		&ContentSourceYoutubePlaylist{},
+		&ContentSourceYoutubeVideo{},
 	}
 }
 
@@ -56,14 +57,14 @@ func (c *Crawler) listPlaylist(playlistNode model.Node) ([]model.IDable, error) 
 
 //---
 
-func NewCrawler(youtubeSource model.YoutubeSource, logger *logrus.Logger, youtubeClient model.YoutubeClient) (model.Crawler, error) {
-	if !clients.ValidateLinkToChannel(youtubeSource.ChannelURL) {
+func NewCrawlerImpl(youtubeSource *YoutubeSource, logger *logrus.Logger, youtubeClient YoutubeClient) (crawlers.Crawler, error) {
+	if !ValidateLinkToChannel(youtubeSource.ChannelURL) {
 		return nil, xerrors.Errorf("invalid youtube URL: %s", youtubeSource.ChannelURL)
 	}
 	channelID := youtubeSource.ChannelID
 	if channelID == "" {
 		var err error
-		channelID, err = clients.ChannelIDByURL(youtubeSource.ChannelURL)
+		channelID, err = ChannelIDByURL(youtubeSource.ChannelURL)
 		if err != nil {
 			return nil, err
 		}
@@ -74,4 +75,21 @@ func NewCrawler(youtubeSource model.YoutubeSource, logger *logrus.Logger, youtub
 		youtubeSource: youtubeSource,
 		channelID:     channelID,
 	}, nil
+}
+
+func NewCrawler(crawlerMetaStr string, logger *logrus.Logger) (crawlers.Crawler, error) {
+	youtubeSource := YoutubeSource{}
+	err := json.Unmarshal([]byte(crawlerMetaStr), &youtubeSource)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", crawlerMetaStr, err)
+	}
+	youtubeClient, err := newYoutubeGoparseClient(youtubeSource)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create youtube client: %w", err)
+	}
+	return NewCrawlerImpl(&youtubeSource, logger, youtubeClient)
+}
+
+func init() {
+	crawlers.Register(NewCrawler, CrawlerTypeYoutube)
 }

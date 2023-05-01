@@ -3,6 +3,7 @@ package tree
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"personal-feed/pkg/crawlers/registry/youtube"
 	"personal-feed/pkg/model"
 	"testing"
 )
@@ -58,15 +59,15 @@ func TestBaseCases(t *testing.T) {
 
 func TestYoutubeExample(t *testing.T) {
 	tree, err := NewTree([]model.IDable{
-		&model.ContentSourceYoutubePlaylist{},
-		&model.ContentSourceYoutubeVideo{},
+		&youtube.ContentSourceYoutubePlaylist{},
+		&youtube.ContentSourceYoutubeVideo{},
 	})
 	require.NoError(t, err)
 
 	testPlaylists := tree.Root().(*node).ChildrenKeys()
 	require.Equal(t, 0, len(testPlaylists))
 
-	playlist := &model.ContentSourceYoutubePlaylist{
+	playlist := &youtube.ContentSourceYoutubePlaylist{
 		YoutubePlaylistID:    "playlist_id1",
 		YoutubePlaylistTitle: "playlist_name1",
 	}
@@ -76,7 +77,7 @@ func TestYoutubeExample(t *testing.T) {
 
 	require.Equal(t, `ROOT!playlist_id1`, playlistNode.ComplexKey().FullKey())
 
-	video := &model.ContentSourceYoutubeVideo{
+	video := &youtube.ContentSourceYoutubeVideo{
 		YoutubeVideoID:          "video_id_1",
 		YoutubeVideoTitle:       "video_title_1",
 		YoutubeVideoDescription: "video_description_1",
@@ -86,7 +87,7 @@ func TestYoutubeExample(t *testing.T) {
 
 	videos, err := playlistNode.GetChildNodeByKeyID("video_id_1")
 	require.NoError(t, err)
-	videosTest := videos.(*model.ContentSourceYoutubeVideo)
+	videosTest := videos.(*youtube.ContentSourceYoutubeVideo)
 	require.Equal(t, "video_id_1", videosTest.YoutubeVideoID)
 	require.Equal(t, "video_title_1", videosTest.YoutubeVideoTitle)
 	require.Equal(t, "video_description_1", videosTest.YoutubeVideoDescription)
