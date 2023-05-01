@@ -7,6 +7,7 @@ import (
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
 	"personal-feed/pkg/tree"
+	"personal-feed/pkg/util"
 )
 
 type Engine struct {
@@ -15,11 +16,16 @@ type Engine struct {
 	db      repo.Repo
 }
 
-func (e *Engine) RunOnce() error {
+func (e *Engine) RunOnce(ctx context.Context) error {
+	rollbacks := util.Rollbacks{}
+	defer rollbacks.Do()
+
 	tx, err := e.db.NewTx()
 	if err != nil {
 		return xerrors.Errorf("unable to begin new transaction: %w", err)
 	}
+
+	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
 	knownNodes, err := e.db.ExtractTreeNodes(tx, e.source.ID)
 	if err != nil {
@@ -75,7 +81,9 @@ func (e *Engine) RunOnce() error {
 
 	// TODO - insert writing to 'feed' table
 
-	return tx.Commit(context.Background())
+	tx.Commit(context.Background())
+	rollbacks.Cancel()
+	return nil
 }
 
 func NewEngine(source *model.Source, crawler crawlers.Crawler, db repo.Repo) *Engine {

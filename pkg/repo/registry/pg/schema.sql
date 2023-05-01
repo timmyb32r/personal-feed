@@ -67,3 +67,9 @@ CREATE TABLE IF NOT EXISTS feed
 );
 CREATE INDEX IF NOT EXISTS feed_by_user_id ON feed (user_id, id);
 CREATE INDEX IF NOT EXISTS feed_by_user_id ON feed (user_id, state, id);
+
+CREATE TABLE IF NOT EXISTS cron (
+    id integer DEFAULT(1) UNIQUE NOT NULL,
+    last_run_time TIMESTAMP NOT NULL,
+    CONSTRAINT chk_cron_time_one_row CHECK (id = 1)
+);

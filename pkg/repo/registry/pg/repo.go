@@ -60,9 +60,8 @@ func (r *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) er
 	return err
 }
 
-func (r *Repo) ListSources(tx repo.Tx) ([]model.Source, error) {
-	unwrappedTx := tx.(pgx.Tx)
-	rows, err := unwrappedTx.Query(
+func (r *Repo) ListSources() ([]model.Source, error) {
+	rows, err := r.conn.Query(
 		context.Background(),
 		`SELECT id, description, crawler_id, crawler_meta, schedule FROM source;`,
 	)

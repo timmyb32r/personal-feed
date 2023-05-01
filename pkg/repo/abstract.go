@@ -19,7 +19,7 @@ type Repo interface {
 	GetUserInfo(tx Tx, userEmail string) (*model.User, error) // returns nil if user not found
 	UpdateUserInfo(tx Tx, userEmail string, user *model.User) error
 
-	ListSources(tx Tx) ([]model.Source, error)
+	ListSources() ([]model.Source, error)
 
 	InsertNewTreeNodes(tx Tx, sourceID int, nodes []model.DBTreeNode) error
 	ExtractTreeNodes(tx Tx, sourceID int) ([]model.DBTreeNode, error)
