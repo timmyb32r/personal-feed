@@ -12,7 +12,7 @@ func TestRepo(t *testing.T) {
 
 	sourceID := 1
 
-	cfg := NewConfig("?", "?", "?", 6432, "?", true)
+	cfg := RepoConfigPG{}
 	client, err := NewRepo(cfg)
 	require.NoError(t, err)
 

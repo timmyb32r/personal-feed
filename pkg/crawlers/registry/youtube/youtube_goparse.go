@@ -1,4 +1,4 @@
-package clients
+package youtube
 
 import (
 	"golang.org/x/xerrors"
@@ -7,7 +7,7 @@ import (
 )
 
 type YoutubeGoparseClient struct {
-	youtubeSource model.YoutubeSource
+	youtubeSource YoutubeSource
 }
 
 func (c *YoutubeGoparseClient) ListPlaylists(_ string) ([]model.IDable, error) {
@@ -18,7 +18,7 @@ func (c *YoutubeGoparseClient) ListPlaylists(_ string) ([]model.IDable, error) {
 		return nil, nil
 	}
 	for _, el := range res {
-		result = append(result, &model.ContentSourceYoutubePlaylist{YoutubePlaylistID: el[0], YoutubePlaylistTitle: el[1]})
+		result = append(result, &ContentSourceYoutubePlaylist{YoutubePlaylistID: el[0], YoutubePlaylistTitle: el[1]})
 	}
 	return result, nil
 }
@@ -31,12 +31,12 @@ func (c *YoutubeGoparseClient) ListPlaylist(playlistID string) ([]model.IDable, 
 		return nil, nil
 	}
 	for _, el := range res {
-		result = append(result, &model.ContentSourceYoutubeVideo{YoutubeVideoID: el[0], YoutubeVideoTitle: el[1], YoutubeVideoDescription: ""})
+		result = append(result, &ContentSourceYoutubeVideo{YoutubeVideoID: el[0], YoutubeVideoTitle: el[1], YoutubeVideoDescription: ""})
 	}
 	return result, nil
 }
 
-func NewYoutubeGoparseClient(youtubeSource model.YoutubeSource) (*YoutubeGoparseClient, error) {
+func newYoutubeGoparseClient(youtubeSource YoutubeSource) (*YoutubeGoparseClient, error) {
 	if !ValidateLinkToChannel(youtubeSource.ChannelURL) {
 		return nil, xerrors.Errorf("invalid youtube URL: %s", youtubeSource.ChannelURL)
 	}

@@ -1,14 +1,11 @@
-package model
+package crawlers
 
-const (
-	CrawlerTypeYoutube       = 1
-	CrawlerTypeCommonGoparse = 2
-)
+import "personal-feed/pkg/model"
 
 type Crawler interface {
 	CrawlerType() int
-	Layers() []IDable // without root layer
-	ListLayer(depth int, node Node) ([]IDable, error)
+	Layers() []model.IDable // without root layer
+	ListLayer(depth int, node model.Node) ([]model.IDable, error)
 	// ListLayer handler can implement max_children_on_level, and not to parse useless paths!
 	//
 	// And here can be probabilistic approach

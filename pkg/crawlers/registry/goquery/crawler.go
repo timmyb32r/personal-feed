@@ -1,8 +1,10 @@
-package commongoparse
+package goquery
 
 import (
+	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
+	"personal-feed/pkg/crawlers"
 	"personal-feed/pkg/goquerywrapper"
 	"personal-feed/pkg/model"
 )
@@ -15,11 +17,11 @@ func (n stNt) ID() string {
 
 type Crawler struct {
 	logger              *logrus.Logger
-	commonGoparseSource model.CommonGoparseSource
+	commonGoparseSource CommonGoparseSource
 }
 
 func (c *Crawler) CrawlerType() int {
-	return model.CrawlerTypeCommonGoparse
+	return CrawlerTypeCommonGoparse
 }
 
 func (c *Crawler) Layers() []model.IDable {
@@ -56,9 +58,18 @@ func (c *Crawler) listLayer(depth int) ([]model.IDable, error) {
 
 //---
 
-func NewCrawler(commonGoparseSource model.CommonGoparseSource, logger *logrus.Logger) (*Crawler, error) {
+func NewCrawler(crawlerMetaStr string, logger *logrus.Logger) (crawlers.Crawler, error) {
+	commonGoparseSource := CommonGoparseSource{}
+	err := json.Unmarshal([]byte(crawlerMetaStr), &commonGoparseSource)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", crawlerMetaStr, err)
+	}
 	return &Crawler{
 		logger:              logger,
 		commonGoparseSource: commonGoparseSource,
 	}, nil
+}
+
+func init() {
+	crawlers.Register(NewCrawler, CrawlerTypeCommonGoparse)
 }
