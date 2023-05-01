@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"personal-feed/pkg/model"
+	"time"
 )
 
 type Tx interface {
@@ -22,6 +23,9 @@ type Repo interface {
 
 	InsertNewTreeNodes(tx Tx, sourceID int, nodes []model.DBTreeNode) error
 	ExtractTreeNodes(tx Tx, sourceID int) ([]model.DBTreeNode, error)
+
+	GetNextCronPeriod(ctx context.Context) (lastRunTime *time.Time, currentTime time.Time, err error)
+	SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time) error
 
 	// temporary things
 

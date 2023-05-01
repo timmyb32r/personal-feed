@@ -78,9 +78,9 @@ func (e *Engine) RunOnce() error {
 	return tx.Commit(context.Background())
 }
 
-func NewEngine(source model.Source, crawler crawlers.Crawler, db repo.Repo) *Engine {
+func NewEngine(source *model.Source, crawler crawlers.Crawler, db repo.Repo) *Engine {
 	return &Engine{
-		source:  source,
+		source:  *source,
 		crawler: crawler,
 		db:      db,
 	}
