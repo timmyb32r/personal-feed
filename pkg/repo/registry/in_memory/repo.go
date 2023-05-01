@@ -27,7 +27,7 @@ func (r *Repo) UpdateUserInfo(_ repo.Tx, _ string, _ *model.User) error {
 	return nil
 }
 
-func (r *Repo) ListSources(_ repo.Tx) ([]model.Source, error) {
+func (r *Repo) ListSources() ([]model.Source, error) {
 	return nil, nil
 }
 

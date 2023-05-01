@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -107,24 +108,26 @@ func TestEngine(t *testing.T) {
 	err = json.Unmarshal([]byte(source.CrawlerMeta), &youtubeSource)
 	require.NoError(t, err)
 
+	ctx := context.TODO()
+
 	crawler1, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
 	engine1 := NewEngine(source, crawler1, inMemoryRepo)
-	err = engine1.RunOnce()
+	err = engine1.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
 	crawler2, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
 	engine2 := NewEngine(source, crawler2, inMemoryRepo)
-	err = engine2.RunOnce()
+	err = engine2.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
 	crawler3, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime2{})
 	require.NoError(t, err)
 	engine3 := NewEngine(source, crawler3, inMemoryRepo)
-	err = engine3.RunOnce()
+	err = engine3.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 6, inMemoryRepo.Len())
 }
