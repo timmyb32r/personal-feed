@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
 	"os"
@@ -19,14 +20,16 @@ import (
 
 type HTTPServer struct {
 	config      *config.Config
+	logger      *logrus.Logger
 	httpServer  http.Server
 	shutdownReq chan bool
 	once        sync.Once
 }
 
-func NewHTTPServer(config *config.Config) *HTTPServer {
+func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 	s := &HTTPServer{
 		config: config,
+		logger: logger,
 		httpServer: http.Server{
 			Addr:         "0.0.0.0:80",
 			ReadTimeout:  10 * time.Second,
@@ -79,7 +82,7 @@ func (s *HTTPServer) shutdown() {
 }
 
 func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
-	repoClient, err := repo.NewRepo(s.config.Repo)
+	repoClient, err := repo.NewRepo(s.config.Repo, s.logger)
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
 		return

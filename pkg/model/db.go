@@ -12,5 +12,5 @@ type Source struct {
 	Description string `db:"description"`
 	CrawlerID   int    `db:"crawler_id"`
 	CrawlerMeta string `db:"crawler_meta"`
-	Schedule    string `db:"schedule"`
+	Schedule    string `db:"schedule"` // https://en.wikipedia.org/wiki/Cron
 }

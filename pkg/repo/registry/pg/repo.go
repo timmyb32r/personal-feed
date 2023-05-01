@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
@@ -12,21 +13,23 @@ import (
 )
 
 type Repo struct {
-	conn *pgx.Conn
+	config *RepoConfigPG
+	logger *logrus.Logger
+	conn   *pgx.Conn
 }
 
-func (c *Repo) NewTx() (repo.Tx, error) {
+func (r *Repo) NewTx() (repo.Tx, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	tx, err := c.conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadWrite})
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadWrite})
 	if err != nil {
 		return nil, xerrors.Errorf("unable to start tx, err: %w", err)
 	}
 	return tx, err
 }
 
-func (c *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
+func (r *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -50,14 +53,14 @@ func (c *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
 	return user, nil
 }
 
-func (c *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) error {
+func (r *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) error {
 	query := `UPDATE users SET tg_chat_id=$1, nickname=$2, pass_hash=$3 WHERE email=$4;`
 	unwrappedTx := tx.(pgx.Tx)
 	_, err := unwrappedTx.Exec(context.Background(), query, user.TgChatID, user.Nickname, user.PassHash, userEmail)
 	return err
 }
 
-func (c *Repo) ListSources(tx repo.Tx) ([]model.Source, error) {
+func (r *Repo) ListSources(tx repo.Tx) ([]model.Source, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -81,7 +84,7 @@ func (c *Repo) ListSources(tx repo.Tx) ([]model.Source, error) {
 	return result, nil
 }
 
-func (c *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (r *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -99,7 +102,7 @@ func (c *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTree
 	return err
 }
 
-func (c *Repo) ExtractTreeNodes(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (r *Repo) ExtractTreeNodes(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -123,7 +126,28 @@ func (c *Repo) ExtractTreeNodes(tx repo.Tx, sourceID int) ([]model.DBTreeNode, e
 	return result, nil
 }
 
-func (c *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
+func (r *Repo) GetNextCronPeriod(ctx context.Context) (lastRunTime *time.Time, currentTime time.Time, err error) {
+	query := fmt.Sprintf(
+		"SELECT (SELECT last_run_time FROM %s.cron), now() AT TIME ZONE 'utc'",
+		r.config.Schema)
+	row := r.conn.QueryRow(ctx, query)
+	if err := row.Scan(&lastRunTime, &currentTime); err != nil {
+		return nil, time.Time{}, xerrors.Errorf("unable to get last_run_time and now(), err: %w", err)
+	}
+	return lastRunTime, currentTime, nil
+}
+
+func (r *Repo) SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time) error {
+	query := fmt.Sprintf(
+		"INSERT INTO %s.cron(last_run_time) VALUES ($1) ON CONFLICT(id) DO UPDATE SET last_run_time = $1",
+		r.config.Schema)
+	if _, err := r.conn.Exec(ctx, query, cronLastRunTime); err != nil {
+		return xerrors.Errorf("unable to set cron last_run_time, err: %w", err)
+	}
+	return nil
+}
+
+func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -147,18 +171,21 @@ func (c *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	return result, nil
 }
 
-func (c *Repo) Close() error {
-	return c.conn.Close(context.Background())
+func (r *Repo) Close() error {
+	return r.conn.Close(context.Background())
 }
 
-func NewRepo(cfg interface{}) (repo.Repo, error) {
+func NewRepo(cfg interface{}, logger *logrus.Logger) (repo.Repo, error) {
 	cfgUnwrapped := cfg.(*RepoConfigPG) // unpack
+	cfgUnwrappedCopy := *cfgUnwrapped
 	conn, err := pgx.Connect(context.Background(), cfgUnwrapped.ToConnString())
 	if err != nil {
 		return nil, xerrors.Errorf("unable to connect to the database, err: %w", err)
 	}
 	return &Repo{
-		conn: conn,
+		config: &cfgUnwrappedCopy,
+		logger: logger,
+		conn:   conn,
 	}, nil
 }
 

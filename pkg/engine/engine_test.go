@@ -90,7 +90,7 @@ func (c *mockYoutubeClientTime2) ListPlaylist(playlistID string) ([]model.IDable
 //---------------------------------------------------------------------------------------------------------------------
 
 func TestEngine(t *testing.T) {
-	source := model.Source{
+	source := &model.Source{
 		ID:          1,
 		Description: "blablabla",
 		CrawlerID:   1,
@@ -98,7 +98,7 @@ func TestEngine(t *testing.T) {
 		Schedule:    "",
 	}
 
-	inMemoryRepoWrapped, _ := in_memory.NewRepo(struct{}{})
+	inMemoryRepoWrapped, _ := in_memory.NewRepo(struct{}{}, nil)
 	inMemoryRepo := inMemoryRepoWrapped.(*in_memory.Repo)
 	var log = logrus.New()
 	var err error

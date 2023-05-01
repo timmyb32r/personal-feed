@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/akamensky/argparse"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -33,11 +34,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	currServer := server.NewServer(currConfig)
+	currServer := server.NewServer(currConfig, logger)
 	defer currServer.Close()
 
 	for {
-		err := currServer.RunIteration(logger)
+		err := currServer.HandleAllSources(context.TODO())
 		if err != nil {
 			logger.Errorf("server returned error: %s" + err.Error())
 		} else {
@@ -46,6 +47,6 @@ func main() {
 		if isOnce != nil && *isOnce {
 			break
 		}
-		time.Sleep(6 * time.Hour)
+		time.Sleep(time.Minute)
 	}
 }
