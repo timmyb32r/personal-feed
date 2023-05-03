@@ -41,8 +41,6 @@ func main() {
 		err := currServer.HandleAllSources(context.TODO())
 		if err != nil {
 			logger.Errorf("server returned error: %s" + err.Error())
-		} else {
-			logger.Info("server returned execution from RunIteration()")
 		}
 		if isOnce != nil && *isOnce {
 			break
