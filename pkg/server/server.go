@@ -51,11 +51,20 @@ func (s *Server) runIteration(ctx context.Context, currRepo repo.Repo, source *m
 	s.logger.Infof("started to handle source %d by the schedule", source.ID)
 	defer s.logger.Infof("finished to handle source %d by the schedule", source.ID)
 
+	numNotMatchedNotifier := func(crawlerDescr string, expected *int, real int) {
+		if expected == nil {
+			return
+		}
+		if *expected != real {
+			s.logger.Warnf("NumNotMatched, crawler: %s, expected: %d, real: %d", crawlerDescr, *expected, real)
+		}
+	}
+
 	currCrawler, err := crawlers.NewCrawler(*source, s.logger)
 	if err != nil {
 		return xerrors.Errorf("unable to create new crawler, err: %w", err)
 	}
-	currEngine := engine.NewEngine(source, currCrawler, currRepo)
+	currEngine := engine.NewEngine(source, numNotMatchedNotifier, currCrawler, currRepo)
 	err = currEngine.RunOnce(ctx)
 	if err != nil {
 		return xerrors.Errorf("currEngine.RunOnce returned an error, err: %w", err)

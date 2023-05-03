@@ -11,9 +11,10 @@ import (
 )
 
 type Engine struct {
-	source  model.Source
-	crawler crawlers.Crawler
-	db      repo.Repo
+	source             model.Source
+	numMatchedNotifier model.NumMatchedNotifier
+	crawler            crawlers.Crawler
+	db                 repo.Repo
 }
 
 func (e *Engine) RunOnce(ctx context.Context) error {
@@ -56,6 +57,7 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 			if err != nil {
 				return xerrors.Errorf("unable to list node: %s, err: %w", currNode.ComplexKey().FullKey(), err)
 			}
+			e.numMatchedNotifier(e.source.ToJSON(), e.source.NumShouldBeMatched, len(children))
 			for _, child := range children {
 				if !model.IsSameType(child, layers[i]) {
 					return xerrors.Errorf("parser returned wrong type, on node: %s, %T vs expected %T", currNode.ComplexKey().FullKey(), child, layers[i+1])
@@ -86,10 +88,11 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 	return nil
 }
 
-func NewEngine(source *model.Source, crawler crawlers.Crawler, db repo.Repo) *Engine {
+func NewEngine(source *model.Source, numMatchedNotifier model.NumMatchedNotifier, crawler crawlers.Crawler, db repo.Repo) *Engine {
 	return &Engine{
-		source:  *source,
-		crawler: crawler,
-		db:      db,
+		source:             *source,
+		numMatchedNotifier: numMatchedNotifier,
+		crawler:            crawler,
+		db:                 db,
 	}
 }

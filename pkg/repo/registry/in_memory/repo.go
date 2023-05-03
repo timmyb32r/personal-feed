@@ -82,6 +82,7 @@ func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx) ([]model.DBTreeNode, error) {
 	for _, v := range r.base {
 		result = append(result, v...)
 	}
+
 	return result, nil
 }
 

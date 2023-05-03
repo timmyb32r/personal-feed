@@ -63,7 +63,7 @@ func (r *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) er
 func (r *Repo) ListSources() ([]model.Source, error) {
 	rows, err := r.conn.Query(
 		context.Background(),
-		`SELECT id, description, crawler_id, crawler_meta, schedule FROM source;`,
+		`SELECT id, description, crawler_id, crawler_meta, schedule, num_should_be_matched FROM source;`,
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)
@@ -71,7 +71,7 @@ func (r *Repo) ListSources() ([]model.Source, error) {
 	result := make([]model.Source, 0)
 	for rows.Next() {
 		var source model.Source
-		err = rows.Scan(&source.ID, &source.Description, &source.CrawlerID, &source.CrawlerMeta, &source.Schedule)
+		err = rows.Scan(&source.ID, &source.Description, &source.CrawlerID, &source.CrawlerMeta, &source.Schedule, &source.NumShouldBeMatched)
 		if err != nil {
 			return nil, xerrors.Errorf("unable to scan, err: ", err)
 		}
@@ -150,7 +150,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
-		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json FROM events LIMIT 10;`),
+		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json, insert_date FROM events ORDER BY insert_date DESC LIMIT 10;`),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)

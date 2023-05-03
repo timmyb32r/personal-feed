@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS source
     description text,
     crawler_id int,
     crawler_meta json,
-    schedule text
+    schedule text,
+    num_should_matched int
 );
 
 CREATE TABLE IF NOT EXISTS tags

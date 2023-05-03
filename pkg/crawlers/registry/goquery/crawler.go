@@ -16,8 +16,9 @@ func (n stNt) ID() string {
 }
 
 type Crawler struct {
-	logger              *logrus.Logger
+	source              model.Source
 	commonGoparseSource CommonGoparseSource
+	logger              *logrus.Logger
 }
 
 func (c *Crawler) CrawlerType() int {
@@ -58,15 +59,16 @@ func (c *Crawler) listLayer(depth int) ([]model.IDable, error) {
 
 //---
 
-func NewCrawler(crawlerMetaStr string, logger *logrus.Logger) (crawlers.Crawler, error) {
+func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, error) {
 	commonGoparseSource := CommonGoparseSource{}
-	err := json.Unmarshal([]byte(crawlerMetaStr), &commonGoparseSource)
+	err := json.Unmarshal([]byte(source.CrawlerMeta), &commonGoparseSource)
 	if err != nil {
-		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", crawlerMetaStr, err)
+		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", source.CrawlerMeta, err)
 	}
 	return &Crawler{
-		logger:              logger,
+		source:              source,
 		commonGoparseSource: commonGoparseSource,
+		logger:              logger,
 	}, nil
 }
 
