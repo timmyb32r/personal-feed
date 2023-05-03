@@ -45,7 +45,7 @@ func (s *Server) runIteration(ctx context.Context, currRepo repo.Repo, source *m
 
 	nextTime := schedule.Next(*lastRunTime)
 	if nextTime.After(currentTime) {
-		return xerrors.Errorf("somehow next time is after current time, last_time(UTC) '%v', current_time(UTC) '%v'", *lastRunTime, currentTime)
+		return nil // it's not time for you next run, bro
 	}
 
 	s.logger.Infof("started to handle source %d by the schedule", source.ID)
