@@ -110,23 +110,25 @@ func TestEngine(t *testing.T) {
 
 	ctx := context.TODO()
 
-	crawler1, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime1{})
+	stubNotifier := func(crawlerDescr string, expected *int, real int) {}
+
+	crawler1, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
-	engine1 := NewEngine(source, crawler1, inMemoryRepo)
+	engine1 := NewEngine(source, stubNotifier, crawler1, inMemoryRepo)
 	err = engine1.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
-	crawler2, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime1{})
+	crawler2, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
-	engine2 := NewEngine(source, crawler2, inMemoryRepo)
+	engine2 := NewEngine(source, stubNotifier, crawler2, inMemoryRepo)
 	err = engine2.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
-	crawler3, err := youtube.NewCrawlerImpl(&youtubeSource, log, &mockYoutubeClientTime2{})
+	crawler3, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime2{})
 	require.NoError(t, err)
-	engine3 := NewEngine(source, crawler3, inMemoryRepo)
+	engine3 := NewEngine(source, stubNotifier, crawler3, inMemoryRepo)
 	err = engine3.RunOnce(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 6, inMemoryRepo.Len())

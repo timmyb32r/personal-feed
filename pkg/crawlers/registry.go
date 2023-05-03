@@ -3,10 +3,11 @@ package crawlers
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"personal-feed/pkg/model"
 	"personal-feed/pkg/util"
 )
 
-type crawlerFactory func(string, *logrus.Logger) (Crawler, error)
+type crawlerFactory func(model.Source, *logrus.Logger) (Crawler, error)
 
 var crawlerIDToFactory = make(map[int]crawlerFactory)
 var CrawlerIDToName = make(map[int]string)

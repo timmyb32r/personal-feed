@@ -8,7 +8,7 @@ import (
 
 func NewCrawler(source model.Source, logger *logrus.Logger) (Crawler, error) {
 	if currCrawlerFactory, ok := crawlerIDToFactory[source.CrawlerID]; ok {
-		return currCrawlerFactory(source.CrawlerMeta, logger)
+		return currCrawlerFactory(source, logger)
 	} else {
 		return nil, xerrors.Errorf("unknown crawlerID: %d", source.CrawlerID)
 	}
