@@ -3,7 +3,7 @@ image: Ubuntu
 
 build: off
 
-clone_folder: /usr/go/src/github.com/$username/$project
+clone_folder: /usr/go/src/github.com/timmyb32r/personal-feed
 
 environment:
   GOPATH: /usr/go/
