@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// appveyor-test-00
+
 func main() {
 	var logger = logrus.New()
 
