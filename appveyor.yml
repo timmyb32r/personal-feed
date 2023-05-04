@@ -1,4 +1,6 @@
 # appveyor.yml
+image: Ubuntu
+
 build: off
 
 clone_folder: /usr/go/src/github.com/$username/$project
