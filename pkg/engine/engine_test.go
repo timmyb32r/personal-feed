@@ -91,11 +91,17 @@ func (c *mockYoutubeClientTime2) ListPlaylist(playlistID string) ([]model.IDable
 //---------------------------------------------------------------------------------------------------------------------
 
 func TestEngine(t *testing.T) {
+	youtubeSource := youtube.YoutubeSource{
+		ChannelURL: "https://www.youtube.com/blablabla",
+		ChannelID:  "my_channel_id",
+	}
+	youtubeSourceArr, _ := json.Marshal(youtubeSource)
+
 	source := &model.Source{
 		ID:          1,
 		Description: "blablabla",
 		CrawlerID:   1,
-		CrawlerMeta: `{"ChannelURL": "https://www.youtube.com/blablabla"}`,
+		CrawlerMeta: string(youtubeSourceArr),
 		Schedule:    "",
 	}
 
@@ -103,10 +109,6 @@ func TestEngine(t *testing.T) {
 	inMemoryRepo := inMemoryRepoWrapped.(*in_memory.Repo)
 	var log = logrus.New()
 	var err error
-
-	var youtubeSource youtube.YoutubeSource
-	err = json.Unmarshal([]byte(source.CrawlerMeta), &youtubeSource)
-	require.NoError(t, err)
 
 	ctx := context.TODO()
 
