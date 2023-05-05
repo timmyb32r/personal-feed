@@ -81,8 +81,6 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 		return xerrors.Errorf("unable to inset new nodes, err: %w", err)
 	}
 
-	// TODO - insert writing to 'feed' table
-
 	tx.Commit(context.Background())
 	rollbacks.Cancel()
 	return nil

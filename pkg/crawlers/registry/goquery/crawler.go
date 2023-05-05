@@ -47,7 +47,7 @@ func (c *Crawler) ListLayer(depth int, _ model.Node) ([]model.IDable, error) {
 func (c *Crawler) listLayer(depth int) ([]model.IDable, error) {
 	result := make([]model.IDable, 0)
 	currLayer := c.commonGoparseSource.Layers[depth]
-	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.commonGoparseSource.URL, currLayer.Query, currLayer.Attr, currLayer.Regex, goquerywrapper.AddText)
+	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, c.commonGoparseSource.URL, currLayer.Query, currLayer.Attr, currLayer.Regex)
 	if err != nil {
 		return nil, nil
 	}

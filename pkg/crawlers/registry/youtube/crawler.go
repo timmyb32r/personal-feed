@@ -90,7 +90,7 @@ func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, e
 	if err != nil {
 		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", source.CrawlerMeta, err)
 	}
-	youtubeClient, err := newYoutubeGoparseClient(youtubeSource)
+	youtubeClient, err := newYoutubeGoparseClient(logger, youtubeSource)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to create youtube client: %w", err)
 	}
