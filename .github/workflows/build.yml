@@ -17,7 +17,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@master
       - name: Build and Test
-        run: make test
+        run: go test -race -coverprofile=coverate.out -covermode=atomic ./...
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
