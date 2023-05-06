@@ -24,7 +24,6 @@ func (r *Repo) GenerateLiquibaseProperties() (string, error) {
 	result += fmt.Sprintf("url: jdbc:postgresql://%s:%d/%s\n", r.config.Host, r.config.Port, r.config.Name)
 	result += fmt.Sprintf("username: %s\n", r.config.User)
 	result += fmt.Sprintf("password: %s\n", r.config.Password)
-	result += fmt.Sprintf("classpath: postgresql-42.2.8.jar\n")
 	return result, nil
 }
 
