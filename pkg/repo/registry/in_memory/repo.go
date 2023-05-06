@@ -3,6 +3,7 @@ package in_memory
 import (
 	"context"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
 	"sync"
@@ -13,6 +14,10 @@ type Repo struct {
 	base            map[int][]model.DBTreeNode
 	cronLastRunTime *time.Time
 	mutex           sync.Mutex
+}
+
+func (r *Repo) GenerateLiquibaseProperties() (string, error) {
+	return "", xerrors.Errorf("liquibase is unsupported for in-memory repo")
 }
 
 func (r *Repo) NewTx() (repo.Tx, error) {

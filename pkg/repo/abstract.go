@@ -14,6 +14,8 @@ type Tx interface {
 // > mockgen -source ./abstract.go -package db -destination ./abstract_mock.go
 
 type Repo interface {
+	GenerateLiquibaseProperties() (string, error)
+
 	NewTx() (Tx, error)
 
 	GetUserInfo(tx Tx, userEmail string) (*model.User, error) // returns nil if user not found
