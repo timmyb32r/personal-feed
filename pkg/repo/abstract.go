@@ -23,11 +23,15 @@ type Repo interface {
 
 	ListSources() ([]model.Source, error)
 
-	InsertNewTreeNodes(tx Tx, sourceID int, nodes []model.DBTreeNode) error
-	ExtractTreeNodes(tx Tx, sourceID int) ([]model.DBTreeNode, error)
+	InsertNewTreeNodesTx(tx Tx, sourceID int, nodes []model.DBTreeNode) error
+	InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []model.DBTreeNode) error
+	ExtractTreeNodesTx(tx Tx, sourceID int) ([]model.DBTreeNode, error)
+	ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTreeNode, error)
 
 	GetNextCronPeriod(ctx context.Context) (lastRunTime *time.Time, currentTime time.Time, err error)
 	SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time) error
+
+	SetState(ctx context.Context, sourceID int, state string) error
 
 	// temporary things
 

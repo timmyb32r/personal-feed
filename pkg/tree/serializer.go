@@ -8,7 +8,7 @@ import (
 	"sort"
 )
 
-func serializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.IDable) *model.DBTreeNode {
+func SerializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.IDable) *model.DBTreeNode {
 	JSONObj, _ := json.Marshal(key)
 	return &model.DBTreeNode{
 		SourceID:        sourceID,
@@ -19,12 +19,12 @@ func serializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.ID
 }
 
 func serializeInternalNode(sourceID int, el *node) *model.DBTreeNode {
-	return serializeKey(sourceID, el.ComplexKey().ParentKey(), el.Key())
+	return SerializeKey(sourceID, el.ComplexKey().ParentKey(), el.Key())
 }
 
 func serializeDoc(sourceID int, fullKey string, key model.IDable) *model.DBTreeNode {
 	complexKey, _ := model.ParseComplexKey(fullKey)
-	return serializeKey(sourceID, complexKey.ParentKey(), key)
+	return SerializeKey(sourceID, complexKey.ParentKey(), key)
 }
 
 func serialize(sourceID int, in *Tree) []model.DBTreeNode {

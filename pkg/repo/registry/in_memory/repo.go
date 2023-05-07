@@ -36,7 +36,11 @@ func (r *Repo) ListSources() ([]model.Source, error) {
 	return nil, nil
 }
 
-func (r *Repo) InsertNewTreeNodes(_ repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (r *Repo) InsertNewTreeNodes(_ context.Context, sourceID int, nodes []model.DBTreeNode) error {
+	return r.InsertNewTreeNodesTx(nil, sourceID, nodes)
+}
+
+func (r *Repo) InsertNewTreeNodesTx(_ repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -48,11 +52,15 @@ func (r *Repo) InsertNewTreeNodes(_ repo.Tx, sourceID int, nodes []model.DBTreeN
 	return nil
 }
 
-func (r *Repo) ExtractTreeNodes(_ repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (r *Repo) ExtractTreeNodesTx(_ repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	return r.base[sourceID], nil
+}
+
+func (r *Repo) ExtractTreeNodes(_ context.Context, sourceID int) ([]model.DBTreeNode, error) {
+	return r.ExtractTreeNodesTx(nil, sourceID)
 }
 
 func (r *Repo) GetNextCronPeriod(_ context.Context) (lastRunTime *time.Time, currentTime time.Time, err error) {
@@ -77,6 +85,10 @@ func (r *Repo) Len() int {
 		sum += len(v)
 	}
 	return sum
+}
+
+func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
+	return nil
 }
 
 func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx) ([]model.DBTreeNode, error) {

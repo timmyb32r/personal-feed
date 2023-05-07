@@ -63,7 +63,7 @@ func (c *Crawler) listPlaylist(playlistNode model.Node) ([]model.IDable, error) 
 
 //---
 
-func NewCrawlerImpl(source model.Source, youtubeSource *YoutubeSource, logger *logrus.Logger, youtubeClient YoutubeClient) (crawlers.Crawler, error) {
+func NewCrawlerImpl(source model.Source, youtubeSource *YoutubeSource, logger *logrus.Logger, youtubeClient YoutubeClient) (crawlers.CrawlerTree, error) {
 	if !ValidateLinkToChannel(youtubeSource.ChannelURL) {
 		return nil, xerrors.Errorf("invalid youtube URL: %s", youtubeSource.ChannelURL)
 	}
@@ -84,7 +84,7 @@ func NewCrawlerImpl(source model.Source, youtubeSource *YoutubeSource, logger *l
 	}, nil
 }
 
-func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, error) {
+func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.CrawlerTree, error) {
 	youtubeSource := YoutubeSource{}
 	err := json.Unmarshal([]byte(source.CrawlerMeta), &youtubeSource)
 	if err != nil {
@@ -98,5 +98,5 @@ func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, e
 }
 
 func init() {
-	crawlers.Register(NewCrawler, CrawlerTypeYoutube)
+	crawlers.RegisterTree(NewCrawler, CrawlerTypeYoutube)
 }

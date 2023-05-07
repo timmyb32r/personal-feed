@@ -1,4 +1,4 @@
-package engine
+package tree
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 type Engine struct {
 	source             model.Source
 	numMatchedNotifier model.NumMatchedNotifier
-	crawler            crawlers.Crawler
+	crawler            crawlers.CrawlerTree
 	db                 repo.Repo
 }
 
@@ -28,7 +28,7 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 
 	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
-	knownNodes, err := e.db.ExtractTreeNodes(tx, e.source.ID)
+	knownNodes, err := e.db.ExtractTreeNodesTx(tx, e.source.ID)
 	if err != nil {
 		return xerrors.Errorf("unable to extract tree nodes: %w", err)
 	}
@@ -76,7 +76,7 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 		return xerrors.Errorf("unable to build diff tree, err: %w", err)
 	}
 
-	err = e.db.InsertNewTreeNodes(tx, e.source.ID, append(newDBInternalNodes, newDBDocs...))
+	err = e.db.InsertNewTreeNodesTx(tx, e.source.ID, append(newDBInternalNodes, newDBDocs...))
 	if err != nil {
 		return xerrors.Errorf("unable to inset new nodes, err: %w", err)
 	}
@@ -86,7 +86,7 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 	return nil
 }
 
-func NewEngine(source *model.Source, numMatchedNotifier model.NumMatchedNotifier, crawler crawlers.Crawler, db repo.Repo) *Engine {
+func NewEngine(source *model.Source, numMatchedNotifier model.NumMatchedNotifier, crawler crawlers.CrawlerTree, db repo.Repo) *Engine {
 	return &Engine{
 		source:             *source,
 		numMatchedNotifier: numMatchedNotifier,

@@ -64,7 +64,10 @@ func (s *Server) runIteration(ctx context.Context, currRepo repo.Repo, source *m
 	if err != nil {
 		return xerrors.Errorf("unable to create new crawler, err: %w", err)
 	}
-	currEngine := engine.NewEngine(source, numNotMatchedNotifier, currCrawler, currRepo)
+	currEngine, err := engine.NewEngine(source, numNotMatchedNotifier, currCrawler, currRepo)
+	if err != nil {
+		return xerrors.Errorf("unable to create engine, err: %w", err)
+	}
 	err = currEngine.RunOnce(ctx)
 	if err != nil {
 		return xerrors.Errorf("currEngine.RunOnce returned an error, err: %w", err)

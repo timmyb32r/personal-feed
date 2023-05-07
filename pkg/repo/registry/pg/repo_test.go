@@ -28,7 +28,7 @@ func TestRepo(t *testing.T) {
 	tx, err := client.NewTx()
 	require.NoError(t, err)
 
-	nodes, err := client.ExtractTreeNodes(tx, sourceID)
+	nodes, err := client.ExtractTreeNodesTx(tx, sourceID)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(nodes))
 
@@ -39,7 +39,7 @@ func TestRepo(t *testing.T) {
 			CurrentNodeJSON: "{}",
 		},
 	}
-	err = client.InsertNewTreeNodes(tx, sourceID, newNodes)
+	err = client.InsertNewTreeNodesTx(tx, sourceID, newNodes)
 	require.NoError(t, err)
 
 	err = tx.Commit(context.Background())
@@ -51,7 +51,7 @@ func TestRepo(t *testing.T) {
 	tx2, err := client.NewTx()
 	require.NoError(t, err)
 
-	nodes2, err := client.ExtractTreeNodes(tx2, sourceID)
+	nodes2, err := client.ExtractTreeNodesTx(tx2, sourceID)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(nodes2))
 }

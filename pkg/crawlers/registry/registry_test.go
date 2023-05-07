@@ -9,9 +9,9 @@ import (
 )
 
 func TestPrintCrawlersList(t *testing.T) {
-	ids := maps.Keys(crawlers.CrawlerIDToName)
+	ids := maps.Keys(crawlers.CrawlerTreeIDToName)
 	sort.Ints(ids)
 	for _, id := range ids {
-		fmt.Printf("%d - %s\n", id, crawlers.CrawlerIDToName[id])
+		fmt.Printf("%d - %s\n", id, crawlers.CrawlerTreeIDToName[id])
 	}
 }

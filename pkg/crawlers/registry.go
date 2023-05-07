@@ -7,15 +7,30 @@ import (
 	"personal-feed/pkg/util"
 )
 
-type crawlerFactory func(model.Source, *logrus.Logger) (Crawler, error)
+type crawlerTreeFactory func(model.Source, *logrus.Logger) (CrawlerTree, error)
 
-var crawlerIDToFactory = make(map[int]crawlerFactory)
-var CrawlerIDToName = make(map[int]string)
+var crawlerTreeIDToFactory = make(map[int]crawlerTreeFactory)
+var CrawlerTreeIDToName = make(map[int]string)
 
-func Register(foo crawlerFactory, crawlerID int) {
-	if existingFactory, ok := crawlerIDToFactory[crawlerID]; ok {
+func RegisterTree(foo crawlerTreeFactory, crawlerID int) {
+	if existingFactory, ok := crawlerTreeIDToFactory[crawlerID]; ok {
 		panic(fmt.Sprintf("this crawlerID (id=%d) is already registered. old: %s, new: %s", crawlerID, util.GetFuncName(existingFactory), util.GetFuncName(foo)))
 	}
-	crawlerIDToFactory[crawlerID] = foo
-	CrawlerIDToName[crawlerID] = util.GetPackageNameOfFunc(foo)
+	crawlerTreeIDToFactory[crawlerID] = foo
+	CrawlerTreeIDToName[crawlerID] = util.GetPackageNameOfFunc(foo)
+}
+
+//---
+
+type crawlerChainFactory func(model.Source, *logrus.Logger) (CrawlerChain, error)
+
+var crawlerChainIDToFactory = make(map[int]crawlerChainFactory)
+var CrawlerChainIDToName = make(map[int]string)
+
+func RegisterChain(foo crawlerChainFactory, crawlerID int) {
+	if existingFactory, ok := crawlerChainIDToFactory[crawlerID]; ok {
+		panic(fmt.Sprintf("this crawlerID (id=%d) is already registered. old: %s, new: %s", crawlerID, util.GetFuncName(existingFactory), util.GetFuncName(foo)))
+	}
+	crawlerChainIDToFactory[crawlerID] = foo
+	CrawlerChainIDToName[crawlerID] = util.GetPackageNameOfFunc(foo)
 }
