@@ -114,7 +114,7 @@ func TestChain(t *testing.T) {
 
 	items, nextLink, err := crawlerImpl.ListItems(sourceCrawlerMeta.URL)
 	require.NoError(t, err)
-	require.Equal(t, "test-blog.io/blog/page/2/", nextLink)
+	require.Equal(t, "https://test-blog.io/blog/page/2/", nextLink)
 	require.Equal(t, 1, len(items))
 	require.Equal(t, "blablabla-blablabla", items[0].(stNt).HeaderText)
 	require.Equal(t, "/blog/2023/05/02/blablabla/", items[0].(stNt).Link)
