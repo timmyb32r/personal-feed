@@ -22,7 +22,8 @@ type CommonGoparseSourceItem struct {
 }
 
 type CommonGoparseSource struct {
-	URL  string
-	Item CommonGoparseSourceItem
-	Next QueryIntoDoc
+	URL     string
+	Item    CommonGoparseSourceItem
+	Next    QueryIntoDoc
+	Content QueryIntoDoc
 }

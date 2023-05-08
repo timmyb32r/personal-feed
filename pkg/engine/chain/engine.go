@@ -38,8 +38,8 @@ func (e *Engine) diff(knownTree *tree.Tree, existingNodes []model.IDable) []mode
 
 func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 	layers := e.crawler.Layers()
-	if len(layers) != 1 {
-		return xerrors.Errorf("wrong configuration of chain crawler - there should be only one layer")
+	if len(layers) != 2 {
+		return xerrors.Errorf("wrong configuration of chain crawler - there should be only two layer")
 	}
 
 	nextLink := e.source.HistoryState
@@ -60,7 +60,7 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 
 		var items []model.IDable
 		var body string
-		items, nextLink, body, err = e.crawler.ListItems(currLink)
+		items, nextLink, body, err = e.crawler.ListItems(1, currLink)
 		if err != nil {
 			return xerrors.Errorf("unable to list items, err: %w", err)
 		}
@@ -73,12 +73,26 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 			for _, newItem := range newItems {
 				e.logger.Infof("    new el: %s", newItem.CurrentNodeJSON)
 			}
-			err = e.db.InsertNewTreeNodes(ctx, e.source.ID, newItems)
-			if err != nil {
-				return xerrors.Errorf("unable to insert items, err: %w", err)
-			}
-		}
+			for _, newItem := range newItems {
+				e.logger.Infof("    start handling el: %s", newItem.CurrentNodeJSON)
 
+				docs, _, _, err := e.crawler.ListItems(2, newItem.ParentFullKey)
+				if err != nil {
+					return xerrors.Errorf("unable to get content, err: %w", err)
+				}
+				if len(docs) != 1 {
+					return xerrors.Errorf("len(docs) != 1, err: %w", err)
+				}
+				dbTreeNode := tree.SerializeDoc(e.source.ID, "ROOT!"+newItem.ParentFullKey, docs[0])
+
+				err = e.db.InsertNewTreeNodes(ctx, e.source.ID, []model.DBTreeNode{newItem, *dbTreeNode})
+				if err != nil {
+					return xerrors.Errorf("unable to insert items, err: %w", err)
+				}
+				e.logger.Infof("    finish handling el: %s", newItem.CurrentNodeJSON)
+			}
+
+		}
 		// if there are something new OR number of new items is not expected OR it's 'load-history' operation
 		// in other words, if regular update found all known items and NumShouldBeMatched is expected - then we are now saving it
 		if (len(newItems) != 0 || (e.source.NumShouldBeMatched != nil && *e.source.NumShouldBeMatched != len(newItems))) || op.OperationType == operation.OpTypeLoadHistory {

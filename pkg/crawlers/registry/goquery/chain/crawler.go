@@ -14,11 +14,20 @@ import (
 )
 
 type stNt struct {
-	HeaderText string
 	Link       string
+	HeaderText string
 }
 
 func (n stNt) ID() string {
+	return n.Link
+}
+
+type stContent struct {
+	Link    string
+	Content string
+}
+
+func (n stContent) ID() string {
 	return n.Link
 }
 
@@ -35,25 +44,16 @@ func (c *Crawler) CrawlerType() int {
 
 func (c *Crawler) Layers() []model.IDable {
 	return []model.IDable{
-		stNt{HeaderText: "", Link: ""},
+		stNt{Link: "", HeaderText: ""},
+		stContent{Link: "", Content: ""},
 	}
 }
 
-func (c *Crawler) ListItems(link string) ([]model.IDable, string, string, error) {
-	if link == "" {
-		link = c.commonGoparseSource.URL
-	}
-	page, err := c.urlGetter.Get(link)
-	if err != nil {
-		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
-	}
+func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, error) {
 	doc, err := goquerywrapper.HTMLToDoc(page)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
 	}
-
-	// items
-
 	res, err := goquerywrapper.Extract(c.logger, doc, c.commonGoparseSource.Item.Query, func(s *goquery.Selection) (string, error) {
 		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Item.Header.Attr, c.commonGoparseSource.Item.Header.Regex)
 	}, func(s *goquery.Selection) (string, error) {
@@ -85,6 +85,40 @@ func (c *Crawler) ListItems(link string) ([]model.IDable, string, string, error)
 	}
 
 	return result, nextLink, page, nil
+}
+
+func (c *Crawler) getPost(page, link string) ([]model.IDable, string, string, error) {
+	doc, err := goquerywrapper.HTMLToDoc(page)
+	if err != nil {
+		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
+	}
+	res, err := goquerywrapper.Extract(c.logger, doc, c.commonGoparseSource.Content.Query, func(s *goquery.Selection) (string, error) {
+		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Content.Attr, c.commonGoparseSource.Content.Regex)
+	})
+	if err != nil {
+		return nil, "", "", xerrors.Errorf("unable to extract content from link %s, err: %w", link, err)
+	}
+	result := make([]model.IDable, 0)
+	for _, el := range res {
+		result = append(result, stContent{Link: link, Content: el[0]})
+	}
+	return result, "", "", nil
+}
+
+func (c *Crawler) ListItems(depth int, link string) ([]model.IDable, string, string, error) {
+	if link == "" {
+		link = c.commonGoparseSource.URL
+	}
+	page, err := c.urlGetter.Get(link)
+	if err != nil {
+		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+	}
+
+	if depth == 1 {
+		return c.listPage(page, link)
+	} else {
+		return c.getPost(page, link)
+	}
 }
 
 //---

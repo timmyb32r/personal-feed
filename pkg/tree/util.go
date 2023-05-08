@@ -20,7 +20,7 @@ func BuildDiffTreeAndSerialize(sourceID int, known, existing *Tree) ([]model.DBT
 	newDocs := diffTree.ExtractDocsUnwrapped()
 	dbNewDocs := make([]model.DBTreeNode, 0, len(newDocs))
 	for fullKey, key := range newDocs {
-		dbNewDocs = append(dbNewDocs, *serializeDoc(sourceID, fullKey, key))
+		dbNewDocs = append(dbNewDocs, *SerializeDoc(sourceID, fullKey, key))
 	}
 
 	return dbNewInternalNodes, dbNewDocs, nil

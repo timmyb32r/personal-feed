@@ -22,7 +22,7 @@ func serializeInternalNode(sourceID int, el *node) *model.DBTreeNode {
 	return SerializeKey(sourceID, el.ComplexKey().ParentKey(), el.Key())
 }
 
-func serializeDoc(sourceID int, fullKey string, key model.IDable) *model.DBTreeNode {
+func SerializeDoc(sourceID int, fullKey string, key model.IDable) *model.DBTreeNode {
 	complexKey, _ := model.ParseComplexKey(fullKey)
 	return SerializeKey(sourceID, complexKey.ParentKey(), key)
 }
@@ -36,10 +36,20 @@ func serialize(sourceID int, in *Tree) []model.DBTreeNode {
 		result = append(result, *serializeInternalNode(sourceID, el))
 	}
 	for fullKey, el := range docs {
-		result = append(result, *serializeDoc(sourceID, fullKey, el))
+		result = append(result, *SerializeDoc(sourceID, fullKey, el))
 	}
 	return result
 }
+
+//func DeserializeObj(in model.DBTreeNode, layersTypes []model.IDable, depth int) (model.IDable, error) {
+//	pointerToRealObj := reflect.New(reflect.TypeOf(in)).Interface()
+//	err := json.Unmarshal([]byte(in.CurrentNodeJSON), pointerToRealObj)
+//	if err != nil {
+//		return nil, xerrors.Errorf("%w", err)
+//	}
+//	realObj := reflect.ValueOf(pointerToRealObj).Elem().Interface()
+//	return realObj.(model.IDable), nil
+//}
 
 func Deserialize(in []model.DBTreeNode, layersTypes []model.IDable) (*Tree, error) {
 	tree, err := NewTree(layersTypes)
