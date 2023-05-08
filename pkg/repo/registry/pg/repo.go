@@ -212,7 +212,7 @@ func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID
 		"INSERT INTO %s.events_iteration(source_id, insert_timestamp, link, body) VALUES ($1, now(), $2, $3)",
 		r.config.Schema)
 	unwrappedTx := tx.(pgx.Tx)
-	if _, err := unwrappedTx.Exec(ctx, query, sourceID, body); err != nil {
+	if _, err := unwrappedTx.Exec(ctx, query, sourceID, link, body); err != nil {
 		return xerrors.Errorf("unable to insert event into events_iteration, err: %w", err)
 	}
 	return nil
