@@ -20,20 +20,20 @@ type Engine struct {
 	logger             *logrus.Logger
 }
 
-func (e *Engine) diff(knownTree *tree.Tree, existingNodes []model.IDable) []model.DBTreeNode {
+func (e *Engine) diff(knownTree *tree.Tree, existingNodes []model.IDable) ([]model.DBTreeNode, []model.IDable) {
 	knownNodesMap := knownTree.ExtractInternalNodes()
-	resultNodes := make([]model.IDable, 0)
+	rawResultNodes := make([]model.IDable, 0)
 	for _, currNode := range existingNodes {
 		if _, ok := knownNodesMap[currNode.ID()]; !ok {
-			resultNodes = append(resultNodes, currNode)
+			rawResultNodes = append(rawResultNodes, currNode)
 		}
 	}
-	result := make([]model.DBTreeNode, 0)
-	for _, el := range resultNodes {
+	rawSerializedNodes := make([]model.DBTreeNode, 0)
+	for _, el := range rawResultNodes {
 		currKey, _ := model.ParseComplexKey("ROOT")
-		result = append(result, *tree.SerializeKey(e.source.ID, currKey, el))
+		rawSerializedNodes = append(rawSerializedNodes, *tree.SerializeKey(e.source.ID, currKey, el))
 	}
-	return result
+	return rawSerializedNodes, rawResultNodes
 }
 
 func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
@@ -65,18 +65,18 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 			return xerrors.Errorf("unable to list items, err: %w", err)
 		}
 		e.numMatchedNotifier(e.source.ToJSON(), e.source.NumShouldBeMatched, len(items))
-		newItems := e.diff(knownTree, items)
+		rawSerializedNodes, rawResultNodes := e.diff(knownTree, items)
 
-		e.logger.Infof("extracted %d elements", len(newItems))
+		e.logger.Infof("extracted %d elements", len(rawSerializedNodes))
 
-		if len(newItems) != 0 {
-			for _, newItem := range newItems {
+		if len(rawSerializedNodes) != 0 {
+			for _, newItem := range rawSerializedNodes {
 				e.logger.Infof("    new el: %s", newItem.CurrentNodeJSON)
 			}
-			for _, newItem := range newItems {
+			for i, newItem := range rawSerializedNodes {
 				e.logger.Infof("    start handling el: %s", newItem.CurrentNodeJSON)
 
-				docs, _, _, err := e.crawler.ListItems(2, newItem.ParentFullKey)
+				docs, _, _, err := e.crawler.ListItems(2, rawResultNodes[i].ID())
 				if err != nil {
 					return xerrors.Errorf("unable to get content, err: %w", err)
 				}
@@ -95,7 +95,7 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 		}
 		// if there are something new OR number of new items is not expected OR it's 'load-history' operation
 		// in other words, if regular update found all known items and NumShouldBeMatched is expected - then we are now saving it
-		if (len(newItems) != 0 || (e.source.NumShouldBeMatched != nil && *e.source.NumShouldBeMatched != len(newItems))) || op.OperationType == operation.OpTypeLoadHistory {
+		if (len(rawSerializedNodes) != 0 || (e.source.NumShouldBeMatched != nil && *e.source.NumShouldBeMatched != len(rawSerializedNodes))) || op.OperationType == operation.OpTypeLoadHistory {
 			e.logger.Infof("will save iteration: %s", currLink)
 			err = e.db.InsertSourceIteration(ctx, e.source.ID, currLink, body)
 			if err != nil {
@@ -103,7 +103,7 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 			}
 		}
 
-		countOfKnownItems := len(items) - len(newItems)
+		countOfKnownItems := len(items) - len(rawSerializedNodes)
 		if op.OperationType == operation.OpTypeRegularUpdate && countOfKnownItems != 0 {
 			e.logger.Infof("regular_update found at least one known element, so it's traversal finished")
 			return nil

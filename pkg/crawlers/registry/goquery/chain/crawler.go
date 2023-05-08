@@ -49,6 +49,14 @@ func (c *Crawler) Layers() []model.IDable {
 	}
 }
 
+func (c *Crawler) MakeLink(URL string) string {
+	u, err := url.Parse(c.commonGoparseSource.URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fmt.Sprintf("https://%s%s", u.Hostname(), URL)
+}
+
 func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, error) {
 	doc, err := goquerywrapper.HTMLToDoc(page)
 	if err != nil {
@@ -64,7 +72,7 @@ func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, e
 	}
 	result := make([]model.IDable, 0)
 	for _, el := range res {
-		result = append(result, stNt{HeaderText: el[0], Link: el[1]})
+		result = append(result, stNt{HeaderText: el[0], Link: c.MakeLink(el[1])})
 	}
 
 	// next_link
@@ -77,11 +85,7 @@ func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, e
 	}
 	nextLink := ""
 	if len(res) != 0 {
-		u, err := url.Parse(c.commonGoparseSource.URL)
-		if err != nil {
-			log.Fatal(err)
-		}
-		nextLink = fmt.Sprintf("https://%s%s", u.Hostname(), res[0][0])
+		nextLink = c.MakeLink(res[0][0])
 	}
 
 	return result, nextLink, page, nil
