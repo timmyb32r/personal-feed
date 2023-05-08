@@ -25,6 +25,7 @@ type Repo interface {
 
 	InsertNewTreeNodesTx(tx Tx, sourceID int, nodes []model.DBTreeNode) error
 	InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []model.DBTreeNode) error
+
 	ExtractTreeNodesTx(tx Tx, sourceID int) ([]model.DBTreeNode, error)
 	ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTreeNode, error)
 
@@ -32,6 +33,9 @@ type Repo interface {
 	SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time) error
 
 	SetState(ctx context.Context, sourceID int, state string) error
+
+	InsertSourceIterationTx(tx Tx, ctx context.Context, sourceID int, body string) error
+	InsertSourceIteration(ctx context.Context, sourceID int, body string) error
 
 	// temporary things
 

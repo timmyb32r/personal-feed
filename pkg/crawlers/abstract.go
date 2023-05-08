@@ -22,5 +22,5 @@ type CrawlerTree interface {
 type CrawlerChain interface {
 	CrawlerType() int
 	Layers() []model.IDable
-	ListItems(link string) ([]model.IDable, string, error) // nodes, nextLink, err
+	ListItems(link string) ([]model.IDable, string, string, error) // nodes, nextLink, body, err
 }

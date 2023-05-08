@@ -53,7 +53,8 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 
 	for {
 		var items []model.IDable
-		items, nextLink, err = e.crawler.ListItems(nextLink)
+		var body string
+		items, nextLink, body, err = e.crawler.ListItems(nextLink)
 		if err != nil {
 			return xerrors.Errorf("unable to list items, err: %w", err)
 		}
@@ -62,6 +63,14 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 			err = e.db.InsertNewTreeNodes(ctx, e.source.ID, newItems)
 			if err != nil {
 				return xerrors.Errorf("unable to insert items, err: %w", err)
+			}
+		}
+
+		// if there are something new OR number of items is not expected!
+		if len(newItems) != 0 || (e.source.NumShouldBeMatched != nil && *e.source.NumShouldBeMatched != len(newItems)) {
+			err = e.db.InsertSourceIteration(ctx, e.source.ID, body)
+			if err != nil {
+				return xerrors.Errorf("unable to InsertSourceIteration, err: %w", err)
 			}
 		}
 		err = e.db.SetState(ctx, e.source.ID, nextLink)

@@ -39,17 +39,17 @@ func (c *Crawler) Layers() []model.IDable {
 	}
 }
 
-func (c *Crawler) ListItems(link string) ([]model.IDable, string, error) {
+func (c *Crawler) ListItems(link string) ([]model.IDable, string, string, error) {
 	if link == "" {
 		link = c.commonGoparseSource.URL
 	}
 	page, err := c.urlGetter.Get(link)
 	if err != nil {
-		return nil, "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
 	}
 	doc, err := goquerywrapper.HTMLToDoc(page)
 	if err != nil {
-		return nil, "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
+		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
 	}
 
 	// items
@@ -60,7 +60,7 @@ func (c *Crawler) ListItems(link string) ([]model.IDable, string, error) {
 		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Item.Link.Attr, c.commonGoparseSource.Item.Link.Regex)
 	})
 	if err != nil {
-		return nil, "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
 	}
 	result := make([]model.IDable, 0)
 	for _, el := range res {
@@ -73,7 +73,7 @@ func (c *Crawler) ListItems(link string) ([]model.IDable, string, error) {
 		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Next.Attr, c.commonGoparseSource.Next.Regex)
 	})
 	if err != nil {
-		return nil, "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
 	}
 	nextLink := ""
 	if len(res) != 0 {
@@ -84,7 +84,7 @@ func (c *Crawler) ListItems(link string) ([]model.IDable, string, error) {
 		nextLink = fmt.Sprintf("https://%s%s", u.Hostname(), res[0][0])
 	}
 
-	return result, nextLink, nil
+	return result, nextLink, page, nil
 }
 
 //---

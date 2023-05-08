@@ -207,6 +207,37 @@ func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
 	return err
 }
 
+func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, body string) error {
+	query := fmt.Sprintf(
+		"INSERT INTO %s.events_iteration(source_id, insert_timestamp, body) VALUES ($1, now(), $2)",
+		r.config.Schema)
+	unwrappedTx := tx.(pgx.Tx)
+	if _, err := unwrappedTx.Exec(ctx, query, sourceID, body); err != nil {
+		return xerrors.Errorf("unable to insert event into events_iteration, err: %w", err)
+	}
+	return nil
+}
+
+func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, body string) error {
+	rollbacks := util.Rollbacks{}
+	defer rollbacks.Do()
+
+	tx, err := r.NewTx()
+	if err != nil {
+		return xerrors.Errorf("unable to create transaction, err: %w", err)
+	}
+
+	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
+
+	err = r.InsertSourceIterationTx(tx, ctx, sourceID, body)
+	if err != nil {
+		return xerrors.Errorf("unable to insert nodes, err: %w", err)
+	}
+
+	rollbacks.Cancel()
+	return nil
+}
+
 func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(

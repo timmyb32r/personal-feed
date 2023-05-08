@@ -91,6 +91,14 @@ func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
 	return nil
 }
 
+func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, body string) error {
+	return nil
+}
+
+func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, body string) error {
+	return nil
+}
+
 func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx) ([]model.DBTreeNode, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
