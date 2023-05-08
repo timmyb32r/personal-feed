@@ -34,8 +34,8 @@ type Repo interface {
 
 	SetState(ctx context.Context, sourceID int, state string) error
 
-	InsertSourceIterationTx(tx Tx, ctx context.Context, sourceID int, body string) error
-	InsertSourceIteration(ctx context.Context, sourceID int, body string) error
+	InsertSourceIterationTx(tx Tx, ctx context.Context, sourceID int, link, body string) error
+	InsertSourceIteration(ctx context.Context, sourceID int, link, body string) error
 
 	// temporary things
 

@@ -2,9 +2,11 @@ package tree
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/crawlers"
 	"personal-feed/pkg/model"
+	"personal-feed/pkg/operation"
 	"personal-feed/pkg/repo"
 	"personal-feed/pkg/tree"
 	"personal-feed/pkg/util"
@@ -15,9 +17,10 @@ type Engine struct {
 	numMatchedNotifier model.NumMatchedNotifier
 	crawler            crawlers.CrawlerTree
 	db                 repo.Repo
+	logger             *logrus.Logger
 }
 
-func (e *Engine) RunOnce(ctx context.Context) error {
+func (e *Engine) RunOnce(ctx context.Context, _ operation.Operation) error {
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
@@ -86,11 +89,12 @@ func (e *Engine) RunOnce(ctx context.Context) error {
 	return nil
 }
 
-func NewEngine(source *model.Source, numMatchedNotifier model.NumMatchedNotifier, crawler crawlers.CrawlerTree, db repo.Repo) *Engine {
+func NewEngine(source *model.Source, numMatchedNotifier model.NumMatchedNotifier, crawler crawlers.CrawlerTree, db repo.Repo, logger *logrus.Logger) *Engine {
 	return &Engine{
 		source:             *source,
 		numMatchedNotifier: numMatchedNotifier,
 		crawler:            crawler,
 		db:                 db,
+		logger:             logger,
 	}
 }

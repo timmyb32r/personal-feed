@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	chaingoquery "personal-feed/pkg/crawlers/registry/goquery/chain"
 	"personal-feed/pkg/model"
+	"personal-feed/pkg/operation"
 	"personal-feed/pkg/repo/registry/in_memory"
 	"testing"
 )
@@ -126,8 +127,12 @@ func TestChain(t *testing.T) {
 
 	ctx := context.TODO()
 
-	engine := NewEngine(source, stubNotifier, crawlerImpl, inMemoryRepo)
-	err = engine.RunOnce(ctx)
+	op := operation.Operation{
+		OperationType: operation.OpTypeRegularUpdate,
+	}
+
+	engine := NewEngine(source, stubNotifier, crawlerImpl, inMemoryRepo, logrus.New())
+	err = engine.RunOnce(ctx, op)
 	require.NoError(t, err)
 	require.Equal(t, 1, inMemoryRepo.Len())
 }

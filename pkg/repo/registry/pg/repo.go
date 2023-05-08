@@ -207,9 +207,9 @@ func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
 	return err
 }
 
-func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, body string) error {
+func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, link, body string) error {
 	query := fmt.Sprintf(
-		"INSERT INTO %s.events_iteration(source_id, insert_timestamp, body) VALUES ($1, now(), $2)",
+		"INSERT INTO %s.events_iteration(source_id, insert_timestamp, link, body) VALUES ($1, now(), $2, $3)",
 		r.config.Schema)
 	unwrappedTx := tx.(pgx.Tx)
 	if _, err := unwrappedTx.Exec(ctx, query, sourceID, body); err != nil {
@@ -218,7 +218,7 @@ func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID
 	return nil
 }
 
-func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, body string) error {
+func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, body string) error {
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
@@ -229,7 +229,7 @@ func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, body str
 
 	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
-	err = r.InsertSourceIterationTx(tx, ctx, sourceID, body)
+	err = r.InsertSourceIterationTx(tx, ctx, sourceID, link, body)
 	if err != nil {
 		return xerrors.Errorf("unable to insert nodes, err: %w", err)
 	}
