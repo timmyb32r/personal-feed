@@ -38,6 +38,9 @@ func DefaultSubtreeExtractor(logger *logrus.Logger, s *goquery.Selection, attr, 
 		str, _ = goquery.OuterHtml(s)
 	}
 
+	if regex == "" {
+		return str, nil
+	}
 	subMatch := re.FindStringSubmatch(str)
 	if len(subMatch) != 2 {
 		return "", xerrors.Errorf("regex is not matched")

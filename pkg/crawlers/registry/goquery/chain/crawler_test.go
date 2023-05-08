@@ -112,7 +112,7 @@ func TestChain(t *testing.T) {
 	crawlerImpl, err := NewCrawlerImpl(source, log, &MockedHTMLGetter{})
 	require.NoError(t, err)
 
-	items, nextLink, _, err := crawlerImpl.ListItems(sourceCrawlerMeta.URL)
+	items, nextLink, _, err := crawlerImpl.ListItems(1, sourceCrawlerMeta.URL)
 	require.NoError(t, err)
 	require.Equal(t, "https://test-blog.io/blog/page/2/", nextLink)
 	require.Equal(t, 1, len(items))

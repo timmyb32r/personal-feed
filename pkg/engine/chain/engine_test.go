@@ -18,12 +18,7 @@ type MockedHTMLGetter struct {
 	index int
 }
 
-func (g *MockedHTMLGetter) Get(_ string) (string, error) {
-	if g.index > 0 {
-		return "", nil
-	}
-	g.index++
-	return `
+var pages = []string{`
 <!DOCTYPE html>
 <html>
 <head>
@@ -46,11 +41,11 @@ func (g *MockedHTMLGetter) Get(_ string) (string, error) {
                                         </div>
                                         <div style="display: table-cell; vertical-align: top;">
                                             <div style="margin-left: 8px;">
-                                            <span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;"> 
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+                                            <span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;">
+                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a>
                                             </span>
                                             <span class="hidden-md hidden-lg" style="font-size: 2rem; line-height: 1;">
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a>
                                             </span>
                                             </div>
                                         </div>
@@ -81,7 +76,34 @@ func (g *MockedHTMLGetter) Get(_ string) (string, error) {
     </script>
 </body>
 </html>
-`, nil
+`, `
+<!DOCTYPE html>
+<html>
+<body class="post">
+    <div id="rhbar"> <a class="jbdevlogo" href="https://blablabla"></a> <a class="rhlogo" href="https://blablabla/"></a> </div>
+    <div id>
+        <div class="container" id="content">
+            <div class="row post-text-padding row-no-expand">
+                <div class="col-md-9">
+                    <div class="post">
+                        <div class="row" style="margin-left: 0; margin-right: 0; margin-bottom: 10px">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+`}
+
+func (g *MockedHTMLGetter) Get(_ string) (string, error) {
+	currIndex := g.index
+	g.index++
+	if currIndex >= len(pages) {
+		return "", nil
+	}
+	return pages[currIndex], nil
 }
 
 //---
@@ -104,6 +126,11 @@ func TestChain(t *testing.T) {
 			Query: ".previous",
 			Attr:  "",
 			Regex: `.*href=\"([^"]+)\".*`,
+		},
+		Content: chaingoquery.QueryIntoDoc{
+			Query: "div.post",
+			Attr:  "",
+			Regex: "",
 		},
 	}
 	sourceCrawlerMetaArr, _ := json.Marshal(sourceCrawlerMeta)
@@ -134,5 +161,5 @@ func TestChain(t *testing.T) {
 	engine := NewEngine(source, stubNotifier, crawlerImpl, inMemoryRepo, logrus.New())
 	err = engine.RunOnce(ctx, op)
 	require.NoError(t, err)
-	require.Equal(t, 1, inMemoryRepo.Len())
+	require.Equal(t, 2, inMemoryRepo.Len())
 }
