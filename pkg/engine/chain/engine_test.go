@@ -92,11 +92,11 @@ func TestChain(t *testing.T) {
 			Query: ".blog-list-item",
 			Header: chaingoquery.QueryIntoSelected{
 				Attr:  "",
-				Regex: `.*<a href=[^>]+>(.*?)</a>.*`,
+				Regex: `.*?<a href=[^>]+>(.*?)</a>.*`,
 			},
 			Link: chaingoquery.QueryIntoSelected{
 				Attr:  "",
-				Regex: `.*<a href="([^"]+)".*`,
+				Regex: `.*?<a href="([^"]+)".*`,
 			},
 		},
 		Next: chaingoquery.QueryIntoDoc{
