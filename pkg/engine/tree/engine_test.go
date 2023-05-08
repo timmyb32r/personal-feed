@@ -1,4 +1,4 @@
-package engine
+package tree
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"personal-feed/pkg/crawlers/registry/youtube"
 	"personal-feed/pkg/model"
+	"personal-feed/pkg/operation"
 	"personal-feed/pkg/repo/registry/in_memory"
 	"testing"
 )
@@ -114,24 +115,28 @@ func TestEngine(t *testing.T) {
 
 	stubNotifier := func(crawlerDescr string, expected *int, real int) {}
 
+	op := operation.Operation{
+		OperationType: operation.OpTypeRegularUpdate,
+	}
+
 	crawler1, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
-	engine1 := NewEngine(source, stubNotifier, crawler1, inMemoryRepo)
-	err = engine1.RunOnce(ctx)
+	engine1 := NewEngine(source, stubNotifier, crawler1, inMemoryRepo, logrus.New())
+	err = engine1.RunOnce(ctx, op)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
 	crawler2, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime1{})
 	require.NoError(t, err)
-	engine2 := NewEngine(source, stubNotifier, crawler2, inMemoryRepo)
-	err = engine2.RunOnce(ctx)
+	engine2 := NewEngine(source, stubNotifier, crawler2, inMemoryRepo, logrus.New())
+	err = engine2.RunOnce(ctx, op)
 	require.NoError(t, err)
 	require.Equal(t, 3, inMemoryRepo.Len())
 
 	crawler3, err := youtube.NewCrawlerImpl(*source, &youtubeSource, log, &mockYoutubeClientTime2{})
 	require.NoError(t, err)
-	engine3 := NewEngine(source, stubNotifier, crawler3, inMemoryRepo)
-	err = engine3.RunOnce(ctx)
+	engine3 := NewEngine(source, stubNotifier, crawler3, inMemoryRepo, logrus.New())
+	err = engine3.RunOnce(ctx, op)
 	require.NoError(t, err)
 	require.Equal(t, 6, inMemoryRepo.Len())
 }

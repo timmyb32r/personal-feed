@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/goquerywrapper"
@@ -15,7 +16,9 @@ type YoutubeGoparseClient struct {
 func (c *YoutubeGoparseClient) ListPlaylists(_ string) ([]model.IDable, error) {
 	result := make([]model.IDable, 0)
 	url := c.youtubeSource.ChannelURL + "/playlists?view=1"
-	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, url, "a[id=video-title]", "href", `list=(.*)`, goquerywrapper.AddText)
+	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, url, "a[id=video-title]", func(s *goquery.Selection) (string, error) {
+		return goquerywrapper.DefaultSubtreeExtractor(logrus.New(), s, "href", `list=(.*)`)
+	}, goquerywrapper.AddText)
 	if err != nil {
 		return nil, nil
 	}
@@ -28,7 +31,9 @@ func (c *YoutubeGoparseClient) ListPlaylists(_ string) ([]model.IDable, error) {
 func (c *YoutubeGoparseClient) ListPlaylist(playlistID string) ([]model.IDable, error) {
 	result := make([]model.IDable, 0)
 	url := c.youtubeSource.ChannelURL + "/playlist?list=" + playlistID
-	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, url, "a[id=video-title]", "href", `/watch?v=(.*?)&`, goquerywrapper.AddText)
+	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, url, "a[id=video-title]", func(s *goquery.Selection) (string, error) {
+		return goquerywrapper.DefaultSubtreeExtractor(logrus.New(), s, "href", `/watch?v=(.*?)&`)
+	}, goquerywrapper.AddText)
 	if err != nil {
 		return nil, nil
 	}

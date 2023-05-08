@@ -10,6 +10,14 @@ CREATE TABLE IF NOT EXISTS source
     num_should_matched int
 );
 
+CREATE TABLE IF NOT EXISTS events_iteration
+(
+    id serial primary key,
+    source_id int,
+    insert_timestamp timestamp,
+    body text
+);
+
 CREATE TABLE IF NOT EXISTS tags
 (
     id serial primary key,

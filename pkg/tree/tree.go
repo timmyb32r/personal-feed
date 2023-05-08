@@ -77,7 +77,7 @@ func (t *Tree) Serialize(sourceID int) []model.DBTreeNode {
 
 func (t *Tree) SerializeKey(sourceID int, fullKey string, key model.IDable) *model.DBTreeNode {
 	currComplexKey, _ := model.ParseComplexKey(fullKey)
-	return serializeKey(sourceID, currComplexKey.ParentKey(), key)
+	return SerializeKey(sourceID, currComplexKey.ParentKey(), key)
 }
 
 func NewTree(layersTypes []model.IDable) (*Tree, error) {

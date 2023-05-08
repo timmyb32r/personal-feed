@@ -8,6 +8,7 @@ import (
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
+	"personal-feed/pkg/util"
 	"strings"
 	"time"
 )
@@ -72,7 +73,7 @@ func (r *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) er
 func (r *Repo) ListSources() ([]model.Source, error) {
 	rows, err := r.conn.Query(
 		context.Background(),
-		`SELECT id, description, crawler_id, crawler_meta, schedule, num_should_be_matched FROM source;`,
+		`SELECT id, description, crawler_id, crawler_meta, schedule, num_should_be_matched, history_state FROM source;`,
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)
@@ -80,7 +81,7 @@ func (r *Repo) ListSources() ([]model.Source, error) {
 	result := make([]model.Source, 0)
 	for rows.Next() {
 		var source model.Source
-		err = rows.Scan(&source.ID, &source.Description, &source.CrawlerID, &source.CrawlerMeta, &source.Schedule, &source.NumShouldBeMatched)
+		err = rows.Scan(&source.ID, &source.Description, &source.CrawlerID, &source.CrawlerMeta, &source.Schedule, &source.NumShouldBeMatched, &source.HistoryState)
 		if err != nil {
 			return nil, xerrors.Errorf("unable to scan, err: ", err)
 		}
@@ -92,7 +93,32 @@ func (r *Repo) ListSources() ([]model.Source, error) {
 	return result, nil
 }
 
-func (r *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (r *Repo) InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []model.DBTreeNode) error {
+	rollbacks := util.Rollbacks{}
+	defer rollbacks.Do()
+
+	tx, err := r.NewTx()
+	if err != nil {
+		return xerrors.Errorf("unable to create transaction, err: %w", err)
+	}
+
+	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
+
+	err = r.InsertNewTreeNodesTx(tx, sourceID, nodes)
+	if err != nil {
+		return xerrors.Errorf("unable to insert nodes, err: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return xerrors.Errorf("unable to commit, err: %w", err)
+	}
+
+	rollbacks.Cancel()
+	return nil
+}
+
+func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -110,7 +136,27 @@ func (r *Repo) InsertNewTreeNodes(tx repo.Tx, sourceID int, nodes []model.DBTree
 	return err
 }
 
-func (r *Repo) ExtractTreeNodes(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTreeNode, error) {
+	rollbacks := util.Rollbacks{}
+	defer rollbacks.Do()
+
+	tx, err := r.NewTx()
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create transaction, err: %w", err)
+	}
+
+	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
+
+	result, err := r.ExtractTreeNodesTx(tx, sourceID)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to insert nodes, err: %w", err)
+	}
+
+	rollbacks.Cancel()
+	return result, nil
+}
+
+func (r *Repo) ExtractTreeNodesTx(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
@@ -152,6 +198,43 @@ func (r *Repo) SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time
 	if _, err := r.conn.Exec(ctx, query, cronLastRunTime); err != nil {
 		return xerrors.Errorf("unable to set cron last_run_time, err: %w", err)
 	}
+	return nil
+}
+
+func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
+	query := `UPDATE source SET history_state=$1 WHERE id=$2;`
+	_, err := r.conn.Exec(context.Background(), query, state, sourceID)
+	return err
+}
+
+func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, link, body string) error {
+	query := fmt.Sprintf(
+		"INSERT INTO %s.events_iteration(source_id, insert_timestamp, link, body) VALUES ($1, now(), $2, $3)",
+		r.config.Schema)
+	unwrappedTx := tx.(pgx.Tx)
+	if _, err := unwrappedTx.Exec(ctx, query, sourceID, body); err != nil {
+		return xerrors.Errorf("unable to insert event into events_iteration, err: %w", err)
+	}
+	return nil
+}
+
+func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, body string) error {
+	rollbacks := util.Rollbacks{}
+	defer rollbacks.Do()
+
+	tx, err := r.NewTx()
+	if err != nil {
+		return xerrors.Errorf("unable to create transaction, err: %w", err)
+	}
+
+	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
+
+	err = r.InsertSourceIterationTx(tx, ctx, sourceID, link, body)
+	if err != nil {
+		return xerrors.Errorf("unable to insert nodes, err: %w", err)
+	}
+
+	rollbacks.Cancel()
 	return nil
 }
 

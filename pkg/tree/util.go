@@ -14,7 +14,7 @@ func BuildDiffTreeAndSerialize(sourceID int, known, existing *Tree) ([]model.DBT
 	dbNewInternalNodes := make([]model.DBTreeNode, 0, len(newInternalNodes))
 	for fullKey, key := range newInternalNodes {
 		complexKey, _ := model.ParseComplexKey(fullKey)
-		dbNewInternalNodes = append(dbNewInternalNodes, *serializeKey(sourceID, complexKey.ParentKey(), key))
+		dbNewInternalNodes = append(dbNewInternalNodes, *SerializeKey(sourceID, complexKey.ParentKey(), key))
 	}
 
 	newDocs := diffTree.ExtractDocsUnwrapped()

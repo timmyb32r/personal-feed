@@ -6,7 +6,7 @@ type DBTreeNode struct {
 	SourceID        int    `db:"source_id"`
 	Depth           int    `db:"depth"` // 0 means 'root'
 	ParentFullKey   string `db:"parent_full_key"`
-	CurrentNodeJSON string `db:"current_node_json"`
+	CurrentNodeJSON string `db:"current_node_json"` // here are serialized object of current depth type
 }
 
 type Source struct {
@@ -16,6 +16,7 @@ type Source struct {
 	CrawlerMeta        string `db:"crawler_meta"`
 	Schedule           string `db:"schedule"` // https://en.wikipedia.org/wiki/Cron
 	NumShouldBeMatched *int   `db:"num_should_be_matched"`
+	HistoryState       string `db:"history_state"`
 }
 
 func (c *Source) ToJSON() string {

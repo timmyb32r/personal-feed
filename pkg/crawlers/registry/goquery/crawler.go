@@ -2,6 +2,7 @@ package goquery
 
 import (
 	"encoding/json"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/crawlers"
@@ -47,7 +48,9 @@ func (c *Crawler) ListLayer(depth int, _ model.Node) ([]model.IDable, error) {
 func (c *Crawler) listLayer(depth int) ([]model.IDable, error) {
 	result := make([]model.IDable, 0)
 	currLayer := c.commonGoparseSource.Layers[depth]
-	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, c.commonGoparseSource.URL, currLayer.Query, currLayer.Attr, currLayer.Regex)
+	res, err := goquerywrapper.ExtractURLAttrValSubstrByRegex(c.logger, c.commonGoparseSource.URL, currLayer.Query, func(s *goquery.Selection) (string, error) {
+		return goquerywrapper.DefaultSubtreeExtractor(logrus.New(), s, currLayer.Attr, currLayer.Regex)
+	})
 	if err != nil {
 		return nil, nil
 	}
@@ -59,7 +62,7 @@ func (c *Crawler) listLayer(depth int) ([]model.IDable, error) {
 
 //---
 
-func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, error) {
+func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.CrawlerTree, error) {
 	commonGoparseSource := CommonGoparseSource{}
 	err := json.Unmarshal([]byte(source.CrawlerMeta), &commonGoparseSource)
 	if err != nil {
@@ -73,5 +76,5 @@ func NewCrawler(source model.Source, logger *logrus.Logger) (crawlers.Crawler, e
 }
 
 func init() {
-	crawlers.Register(NewCrawler, CrawlerTypeCommonGoparse)
+	crawlers.RegisterTree(NewCrawler, CrawlerTypeCommonGoparse)
 }
