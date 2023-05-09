@@ -4,6 +4,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
+	"personal-feed/pkg/goquerywrapper/extractors"
+	"personal-feed/pkg/goquerywrapper/extractors/util"
 	"regexp"
 )
 
@@ -12,7 +14,7 @@ type SubtreeExtractor func(*goquery.Selection) (string, error)
 var AddText = func(s *goquery.Selection) (string, error) { return s.Text(), nil }
 
 func ExtractURLAttrValSubstrByRegex(logger *logrus.Logger, url, query string, extractors ...SubtreeExtractor) ([][]string, error) {
-	doc, err := URLToDoc(url)
+	doc, err := util.URLToDoc(url)
 	if err != nil {
 		return nil, nil
 	}
@@ -67,4 +69,29 @@ func Extract(logger *logrus.Logger, doc *goquery.Document, query string, extract
 		result = append(result, resultElem)
 	})
 	return result, nil
+}
+
+func ExtractItemsByProgram(logger *logrus.Logger, doc *goquery.Document, query string, extractors ...*extractors.GoQueryProgram) ([][]string, error) {
+	result := make([][]string, 0)
+
+	doc.Find(query).Each(func(i int, s *goquery.Selection) {
+		resultElem := make([]string, len(extractors))
+
+		for j, currExtractor := range extractors {
+			currStr, err := currExtractor.Do(s)
+			if err != nil {
+				selectedStr, _ := goquery.OuterHtml(s)
+				logger.Warnf("extractor returned err, err:%s, query:%s, selected:%s", err, query, selectedStr)
+				return
+			}
+			resultElem[j] = currStr
+		}
+
+		result = append(result, resultElem)
+	})
+	return result, nil
+}
+
+func ExtractByProgram(doc *goquery.Document, program *extractors.GoQueryProgram) (string, error) {
+	return program.Do(doc.Selection)
 }

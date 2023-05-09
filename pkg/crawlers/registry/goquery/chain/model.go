@@ -1,29 +1,21 @@
 package goquery
 
+import "personal-feed/pkg/goquerywrapper/extractors"
+
 const (
 	CrawlerTypeCommonGoparseChain = 3
 )
 
-type QueryIntoSelected struct {
-	Attr  string
-	Regex string
-}
-
-type QueryIntoDoc struct {
-	Query string
-	Attr  string
-	Regex string
-}
-
-type CommonGoparseSourceItem struct {
-	Query  string
-	Header QueryIntoSelected
-	Link   QueryIntoSelected
+type Item struct {
+	Query        string
+	Header       extractors.Program
+	Link         extractors.Program
+	BusinessTime extractors.Program
 }
 
 type CommonGoparseSource struct {
-	URL     string
-	Item    CommonGoparseSourceItem
-	Next    QueryIntoDoc
-	Content QueryIntoDoc
+	URL      string
+	Item     Item
+	NextLink extractors.Program
+	Content  extractors.Program
 }
