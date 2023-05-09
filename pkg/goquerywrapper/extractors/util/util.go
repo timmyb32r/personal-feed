@@ -1,4 +1,4 @@
-package goquerywrapper
+package util
 
 import (
 	"github.com/PuerkitoBio/goquery"

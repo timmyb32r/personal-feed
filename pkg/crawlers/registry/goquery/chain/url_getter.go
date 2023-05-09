@@ -1,6 +1,8 @@
 package goquery
 
-import "personal-feed/pkg/goquerywrapper"
+import (
+	"personal-feed/pkg/goquerywrapper/extractors/util"
+)
 
 type URLGetter interface {
 	Get(url string) (string, error)
@@ -9,5 +11,5 @@ type URLGetter interface {
 type DefaultURLGetter struct{}
 
 func (g *DefaultURLGetter) Get(url string) (string, error) {
-	return goquerywrapper.GetURL(url)
+	return util.GetURL(url)
 }

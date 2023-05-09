@@ -3,9 +3,11 @@ package chain
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	chaingoquery "personal-feed/pkg/crawlers/registry/goquery/chain"
+	"personal-feed/pkg/goquerywrapper/extractors"
 	"personal-feed/pkg/model"
 	"personal-feed/pkg/operation"
 	"personal-feed/pkg/repo/registry/in_memory"
@@ -41,12 +43,14 @@ var pages = []string{`
                                         </div>
                                         <div style="display: table-cell; vertical-align: top;">
                                             <div style="margin-left: 8px;">
-                                            <span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;">
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a>
-                                            </span>
-                                            <span class="hidden-md hidden-lg" style="font-size: 2rem; line-height: 1;">
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a>
-                                            </span>
+												<div class="byline" style="line-height: 1;"> <em> May 2, 2023 by </em> <em> name surname </em>
+												</div>
+												<span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;"> 
+													<a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+												</span>
+												<span class="hidden-md hidden-lg" style="font-size: 2rem; line-height: 1;">
+													<a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+												</span>
                                             </div>
                                         </div>
                                     </div>
@@ -111,29 +115,35 @@ func (g *MockedHTMLGetter) Get(_ string) (string, error) {
 func TestChain(t *testing.T) {
 	sourceCrawlerMeta := chaingoquery.CommonGoparseSource{
 		URL: "https://test-blog.io/blog/",
-		Item: chaingoquery.CommonGoparseSourceItem{
+		Item: chaingoquery.Item{
 			Query: ".blog-list-item",
-			Header: chaingoquery.QueryIntoSelected{
-				Attr:  "",
-				Regex: `.*?<a href=[^>]+>(.*?)</a>.*`,
+			Header: extractors.Program{
+				extractors.Instruction{Query: "span.hidden-lg"},
+				extractors.Instruction{Query: "a[href]"},
+				extractors.Instruction{Text: "!"},
 			},
-			Link: chaingoquery.QueryIntoSelected{
-				Attr:  "",
-				Regex: `.*?<a href="([^"]+)".*`,
+			Link: extractors.Program{
+				extractors.Instruction{Query: "span.hidden-lg"},
+				extractors.Instruction{Query: "a[href]"},
+				extractors.Instruction{Attr: "href"},
+			},
+			BusinessTime: extractors.Program{
+				extractors.Instruction{Query: "div.byline"},
+				extractors.Instruction{Text: "!"},
+				extractors.Instruction{Regex: `\s*(.*?) by`},
 			},
 		},
-		Next: chaingoquery.QueryIntoDoc{
-			Query: ".previous",
-			Attr:  "",
-			Regex: `.*href=\"([^"]+)\".*`,
+		NextLink: extractors.Program{
+			extractors.Instruction{Query: "a.previous"},
+			extractors.Instruction{Attr: "href"},
 		},
-		Content: chaingoquery.QueryIntoDoc{
-			Query: "div.post",
-			Attr:  "",
-			Regex: "",
+		Content: extractors.Program{
+			extractors.Instruction{Query: "div.post"},
 		},
 	}
 	sourceCrawlerMetaArr, _ := json.Marshal(sourceCrawlerMeta)
+
+	fmt.Println(string(sourceCrawlerMetaArr))
 
 	source := &model.Source{
 		ID:          1,

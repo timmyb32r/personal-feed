@@ -3,19 +3,21 @@ package goquery
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"log"
 	"net/url"
 	"personal-feed/pkg/crawlers"
 	"personal-feed/pkg/goquerywrapper"
+	"personal-feed/pkg/goquerywrapper/extractors"
+	"personal-feed/pkg/goquerywrapper/extractors/util"
 	"personal-feed/pkg/model"
 )
 
 type stNt struct {
-	Link       string
-	HeaderText string
+	Link         string
+	HeaderText   string
+	BusinessTime string
 }
 
 func (n stNt) ID() string {
@@ -36,6 +38,12 @@ type Crawler struct {
 	commonGoparseSource CommonGoparseSource
 	urlGetter           URLGetter
 	logger              *logrus.Logger
+
+	itemHeaderExtractor       *extractors.GoQueryProgram
+	itemLinkExtractor         *extractors.GoQueryProgram
+	itemBusinessTimeExtractor *extractors.GoQueryProgram
+	nextLinkExtractor         *extractors.GoQueryProgram
+	contentExtractor          *extractors.GoQueryProgram
 }
 
 func (c *Crawler) CrawlerType() int {
@@ -58,53 +66,45 @@ func (c *Crawler) MakeLink(URL string) string {
 }
 
 func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, error) {
-	doc, err := goquerywrapper.HTMLToDoc(page)
+	doc, err := util.HTMLToDoc(page)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
 	}
-	res, err := goquerywrapper.Extract(c.logger, doc, c.commonGoparseSource.Item.Query, func(s *goquery.Selection) (string, error) {
-		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Item.Header.Attr, c.commonGoparseSource.Item.Header.Regex)
-	}, func(s *goquery.Selection) (string, error) {
-		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Item.Link.Attr, c.commonGoparseSource.Item.Link.Regex)
-	})
+	res, err := goquerywrapper.ExtractItemsByProgram(c.logger, doc, c.commonGoparseSource.Item.Query, c.itemHeaderExtractor, c.itemLinkExtractor, c.itemBusinessTimeExtractor)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
 	}
 	result := make([]model.IDable, 0)
 	for _, el := range res {
-		result = append(result, stNt{HeaderText: el[0], Link: c.MakeLink(el[1])})
+		result = append(result, stNt{HeaderText: el[0], Link: c.MakeLink(el[1]), BusinessTime: el[2]})
 	}
 
 	// next_link
 
-	res, err = goquerywrapper.Extract(c.logger, doc, c.commonGoparseSource.Next.Query, func(s *goquery.Selection) (string, error) {
-		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Next.Attr, c.commonGoparseSource.Next.Regex)
-	})
+	rawNextLink, err := goquerywrapper.ExtractByProgram(doc, c.nextLinkExtractor)
 	if err != nil {
-		return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+		//return nil, "", "", xerrors.Errorf("unable to extract from link %s, err: %w", link, err)
+		c.logger.Infof("look like i've found the last page")
 	}
 	nextLink := ""
-	if len(res) != 0 {
-		nextLink = c.MakeLink(res[0][0])
+	if rawNextLink != "" {
+		nextLink = c.MakeLink(rawNextLink)
 	}
 
 	return result, nextLink, page, nil
 }
 
 func (c *Crawler) getPost(page, link string) ([]model.IDable, string, string, error) {
-	doc, err := goquerywrapper.HTMLToDoc(page)
+	doc, err := util.HTMLToDoc(page)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
 	}
-	res, err := goquerywrapper.Extract(c.logger, doc, c.commonGoparseSource.Content.Query, func(s *goquery.Selection) (string, error) {
-		return goquerywrapper.DefaultSubtreeExtractor(c.logger, s, c.commonGoparseSource.Content.Attr, c.commonGoparseSource.Content.Regex)
-	})
+	content, err := goquerywrapper.ExtractByProgram(doc, c.contentExtractor)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to extract content from link %s, err: %w", link, err)
 	}
-	result := make([]model.IDable, 0)
-	for _, el := range res {
-		result = append(result, stContent{Link: link, Content: el[0]})
+	result := []model.IDable{
+		stContent{Link: link, Content: content},
 	}
 	return result, "", "", nil
 }
@@ -133,11 +133,39 @@ func NewCrawlerImpl(source model.Source, logger *logrus.Logger, htmlGetter URLGe
 	if err != nil {
 		return nil, xerrors.Errorf("unable to unmarshal crawlerMetaStr, crawlerMeta: %s, err: %w", source.CrawlerMeta, err)
 	}
+
+	itemHeaderExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.Item.Header)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.header, err: %w", err)
+	}
+	itemLinkExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.Item.Link)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.link, err: %w", err)
+	}
+	itemBusinessTimeExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.Item.BusinessTime)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.business_time, err: %w", err)
+	}
+	nextLinkExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.NextLink)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.next, err: %w", err)
+	}
+	contentExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.Content)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.content, err: %w", err)
+	}
+
 	return &Crawler{
 		source:              source,
 		commonGoparseSource: commonGoparseSource,
 		urlGetter:           htmlGetter,
 		logger:              logger,
+
+		itemHeaderExtractor:       itemHeaderExtractor,
+		itemLinkExtractor:         itemLinkExtractor,
+		itemBusinessTimeExtractor: itemBusinessTimeExtractor,
+		nextLinkExtractor:         nextLinkExtractor,
+		contentExtractor:          contentExtractor,
 	}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"personal-feed/pkg/goquerywrapper/extractors"
 	"personal-feed/pkg/model"
 	"testing"
 )
@@ -38,12 +39,14 @@ func (g *MockedHTMLGetter) Get(_ string) (string, error) {
                                         </div>
                                         <div style="display: table-cell; vertical-align: top;">
                                             <div style="margin-left: 8px;">
-                                            <span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;"> 
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
-                                            </span>
-                                            <span class="hidden-md hidden-lg" style="font-size: 2rem; line-height: 1;">
-                                                <a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
-                                            </span>
+												<div class="byline" style="line-height: 1;"> <em> May 2, 2023 by </em> <em> name surname </em>
+												</div>
+												<span class="hidden-sm hidden-xs" style="font-size: 2.75rem; line-height: 1;"> 
+													<a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+												</span>
+												<span class="hidden-md hidden-lg" style="font-size: 2rem; line-height: 1;">
+													<a href="/blog/2023/05/02/blablabla/">blablabla-blablabla</a> 
+												</span>
                                             </div>
                                         </div>
                                     </div>
@@ -81,21 +84,27 @@ func (g *MockedHTMLGetter) Get(_ string) (string, error) {
 func TestChain(t *testing.T) {
 	sourceCrawlerMeta := CommonGoparseSource{
 		URL: "https://test-blog.io/blog/",
-		Item: CommonGoparseSourceItem{
+		Item: Item{
 			Query: ".blog-list-item",
-			Header: QueryIntoSelected{
-				Attr:  "",
-				Regex: `.*<a href=[^>]+>(.*?)</a>.*`,
+			Header: extractors.Program{
+				extractors.Instruction{Query: "span.hidden-lg"},
+				extractors.Instruction{Query: "a[href]"},
+				extractors.Instruction{Text: "!"},
 			},
-			Link: QueryIntoSelected{
-				Attr:  "",
-				Regex: `.*<a href="([^"]+)".*`,
+			Link: extractors.Program{
+				extractors.Instruction{Query: "span.hidden-lg"},
+				extractors.Instruction{Query: "a[href]"},
+				extractors.Instruction{Attr: "href"},
+			},
+			BusinessTime: extractors.Program{
+				extractors.Instruction{Query: "div.byline"},
+				extractors.Instruction{Text: "!"},
+				extractors.Instruction{Regex: `\s*(.*?) by`},
 			},
 		},
-		Next: QueryIntoDoc{
-			Query: ".previous",
-			Attr:  "",
-			Regex: `.*href=\"([^"]+)\".*`,
+		NextLink: extractors.Program{
+			extractors.Instruction{Query: "a.previous"},
+			extractors.Instruction{Attr: "href"},
 		},
 	}
 	sourceCrawlerMetaArr, _ := json.Marshal(sourceCrawlerMeta)
@@ -118,4 +127,5 @@ func TestChain(t *testing.T) {
 	require.Equal(t, 1, len(items))
 	require.Equal(t, "blablabla-blablabla", items[0].(stNt).HeaderText)
 	require.Equal(t, "https://test-blog.io/blog/2023/05/02/blablabla/", items[0].(stNt).Link)
+	require.Equal(t, "May 2, 2023", items[0].(stNt).BusinessTime)
 }
