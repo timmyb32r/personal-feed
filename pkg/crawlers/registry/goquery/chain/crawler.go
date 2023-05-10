@@ -3,6 +3,7 @@ package goquery
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/araddon/dateparse"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/xerrors"
 	"log"
@@ -12,12 +13,13 @@ import (
 	"personal-feed/pkg/goquerywrapper/extractors"
 	"personal-feed/pkg/goquerywrapper/extractors/util"
 	"personal-feed/pkg/model"
+	"time"
 )
 
 type stNt struct {
 	Link         string
 	HeaderText   string
-	BusinessTime string
+	BusinessTime time.Time
 }
 
 func (n stNt) ID() string {
@@ -76,7 +78,18 @@ func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, e
 	}
 	result := make([]model.IDable, 0)
 	for _, el := range res {
-		result = append(result, stNt{HeaderText: el[0], Link: c.MakeLink(el[1]), BusinessTime: el[2]})
+		businessTime, err := dateparse.ParseAny(el[2])
+		if err != nil {
+			return nil, "", "", xerrors.Errorf("unable to parse business time, str: %s, err: %s", el[2], err)
+		}
+		result = append(
+			result,
+			stNt{
+				HeaderText:   el[0],
+				Link:         c.MakeLink(el[1]),
+				BusinessTime: businessTime,
+			},
+		)
 	}
 
 	// next_link
