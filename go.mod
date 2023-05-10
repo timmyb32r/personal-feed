@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/akamensky/argparse v1.4.0
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/mitchellh/mapstructure v1.5.0

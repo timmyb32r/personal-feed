@@ -7,6 +7,7 @@ import (
 	"personal-feed/pkg/goquerywrapper/extractors"
 	"personal-feed/pkg/model"
 	"testing"
+	"time"
 )
 
 //---
@@ -127,5 +128,5 @@ func TestChain(t *testing.T) {
 	require.Equal(t, 1, len(items))
 	require.Equal(t, "blablabla-blablabla", items[0].(stNt).HeaderText)
 	require.Equal(t, "https://test-blog.io/blog/2023/05/02/blablabla/", items[0].(stNt).Link)
-	require.Equal(t, "May 2, 2023", items[0].(stNt).BusinessTime)
+	require.Equal(t, time.Time(time.Date(2023, time.May, 2, 0, 0, 0, 0, time.UTC)), items[0].(stNt).BusinessTime)
 }
