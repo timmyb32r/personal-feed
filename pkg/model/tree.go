@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type IDable interface {
 	ID() string
 }
@@ -30,3 +32,7 @@ type Node interface {
 }
 
 //-----------------------------------
+
+type BusinessTimeable interface {
+	GetBusinessTime() *time.Time
+}

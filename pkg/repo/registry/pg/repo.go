@@ -126,11 +126,11 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, sourceID int, nodes []model.DBTr
 	args := make([]interface{}, 0, len(nodes)*4)
 	index := 1
 	for _, node := range nodes {
-		elems = append(elems, fmt.Sprintf("($%d, $%d, $%d, $%d, now())", index, index+1, index+2, index+3))
-		args = append(args, sourceID, node.Depth, node.ParentFullKey, node.CurrentNodeJSON)
-		index += 4
+		elems = append(elems, fmt.Sprintf("($%d, $%d, $%d, $%d, now(), $%d)", index, index+1, index+2, index+3, index+4))
+		args = append(args, sourceID, node.Depth, node.ParentFullKey, node.CurrentNodeJSON, node.BusinessTime)
+		index += 5
 	}
-	query := `INSERT INTO events (source_id, depth, parent_full_key, current_node_json, insert_date) VALUES ` + strings.Join(elems, ",") + ";"
+	query := `INSERT INTO events (source_id, depth, parent_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(elems, ",") + ";"
 	unwrappedTx := tx.(pgx.Tx)
 	_, err := unwrappedTx.Exec(context.Background(), query, args...)
 	return err
@@ -149,7 +149,7 @@ func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTr
 
 	result, err := r.ExtractTreeNodesTx(tx, sourceID)
 	if err != nil {
-		return nil, xerrors.Errorf("unable to insert nodes, err: %w", err)
+		return nil, xerrors.Errorf("unable to extract nodes, err: %w", err)
 	}
 
 	rollbacks.Cancel()
@@ -231,7 +231,7 @@ func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, bo
 
 	err = r.InsertSourceIterationTx(tx, ctx, sourceID, link, body)
 	if err != nil {
-		return xerrors.Errorf("unable to insert nodes, err: %w", err)
+		return xerrors.Errorf("unable to insert source iteration in tx, err: %w", err)
 	}
 
 	rollbacks.Cancel()

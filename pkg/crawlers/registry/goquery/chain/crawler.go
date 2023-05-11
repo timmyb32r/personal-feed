@@ -19,11 +19,15 @@ import (
 type stNt struct {
 	Link         string
 	HeaderText   string
-	BusinessTime time.Time
+	BusinessTime *time.Time
 }
 
 func (n stNt) ID() string {
 	return n.Link
+}
+
+func (n stNt) GetBusinessTime() *time.Time {
+	return n.BusinessTime
 }
 
 type stContent struct {
@@ -78,9 +82,13 @@ func (c *Crawler) listPage(page, link string) ([]model.IDable, string, string, e
 	}
 	result := make([]model.IDable, 0)
 	for _, el := range res {
-		businessTime, err := dateparse.ParseAny(el[2])
-		if err != nil {
-			return nil, "", "", xerrors.Errorf("unable to parse business time, str: %s, err: %s", el[2], err)
+		var businessTime *time.Time = nil
+		if c.commonGoparseSource.Item.BusinessTime != nil {
+			businessTimeVal, err := dateparse.ParseAny(el[2])
+			if err != nil {
+				return nil, "", "", xerrors.Errorf("unable to parse business time, str: %s, err: %s", el[2], err)
+			}
+			businessTime = &businessTimeVal
 		}
 		result = append(
 			result,

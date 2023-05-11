@@ -1,8 +1,10 @@
 package tree
 
 import (
+	"encoding/json"
 	"github.com/stretchr/testify/require"
 	"personal-feed/pkg/model"
+	"sort"
 	"testing"
 )
 
@@ -10,6 +12,30 @@ type stNt string // serializer test node type
 
 func (n stNt) ID() string {
 	return string(n)
+}
+
+func normalizeForCanonizing(t *testing.T, in []model.DBTreeNode) []string {
+	type nodeWithoutBusinessTime struct {
+		SourceID        int    `db:"source_id"`
+		Depth           int    `db:"depth"` // 0 means 'root'
+		ParentFullKey   string `db:"parent_full_key"`
+		CurrentNodeJSON string `db:"current_node_json"` // here are serialized object of current depth type
+	}
+
+	resultStrings := make([]string, 0)
+	for _, el := range in {
+		jsonBytes, _ := json.Marshal(el)
+
+		// remove BusinessTime
+		var tmp nodeWithoutBusinessTime
+		err := json.Unmarshal(jsonBytes, &tmp)
+		require.NoError(t, err)
+		jsonBytes, _ = json.Marshal(tmp)
+
+		resultStrings = append(resultStrings, string(jsonBytes))
+	}
+	sort.Strings(resultStrings)
+	return resultStrings
 }
 
 func TestSerde(t *testing.T) {
@@ -54,7 +80,7 @@ func TestSerde(t *testing.T) {
 	}
 
 	resultTreeNodes := serialize(sourceID, knownTree)
-	resultStrings := normalizeForCanonizing(resultTreeNodes)
+	resultStrings := normalizeForCanonizing(t, resultTreeNodes)
 	canonized := []string{
 		`{"SourceID":1,"Depth":1,"ParentFullKey":"ROOT","CurrentNodeJSON":"\"A\""}`,
 		`{"SourceID":1,"Depth":1,"ParentFullKey":"ROOT","CurrentNodeJSON":"\"B\""}`,
@@ -74,6 +100,6 @@ func TestSerde(t *testing.T) {
 	require.NoError(t, err)
 
 	resultTreeNodes2 := serialize(sourceID, deserializedTree)
-	resultStrings2 := normalizeForCanonizing(resultTreeNodes2)
+	resultStrings2 := normalizeForCanonizing(t, resultTreeNodes2)
 	require.Equal(t, canonized, resultStrings2)
 }

@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS events
     depth int,
     parent_full_key text,
     current_node_json json,
-    insert_date timestamp
+    insert_date timestamp,
+    business_time timestamp
 );
 CREATE INDEX IF NOT EXISTS events_by_source_id ON events (source_id, id);
 
