@@ -76,14 +76,15 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 			for i, newItem := range rawSerializedNodes {
 				e.logger.Infof("    start handling el: %s", newItem.CurrentNodeJSON)
 
-				docs, _, _, err := e.crawler.ListItems(2, rawResultNodes[i].ID())
+				currID := rawResultNodes[i].ID()
+				docs, _, _, err := e.crawler.ListItems(2, currID)
 				if err != nil {
 					return xerrors.Errorf("unable to get content, err: %w", err)
 				}
 				if len(docs) != 1 {
 					return xerrors.Errorf("len(docs) != 1, err: %w", err)
 				}
-				dbTreeNode := tree.SerializeDoc(e.source.ID, "ROOT!"+newItem.ParentFullKey, docs[0])
+				dbTreeNode := tree.SerializeDoc(e.source.ID, "ROOT!"+currID+"!doc", docs[0])
 
 				err = e.db.InsertNewTreeNodes(ctx, e.source.ID, []model.DBTreeNode{newItem, *dbTreeNode})
 				if err != nil {

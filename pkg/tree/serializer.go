@@ -5,16 +5,24 @@ import (
 	"golang.org/x/xerrors"
 	"personal-feed/pkg/model"
 	"reflect"
-	"sort"
+	"time"
 )
 
 func SerializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.IDable) *model.DBTreeNode {
 	JSONObj, _ := json.Marshal(key)
+	businessTime := time.Now()
+	if obj, ok := key.(model.BusinessTimeable); ok {
+		ptr := obj.GetBusinessTime()
+		if ptr != nil {
+			businessTime = *ptr
+		}
+	}
 	return &model.DBTreeNode{
 		SourceID:        sourceID,
 		Depth:           parentComplexKey.Depth() + 1,
 		ParentFullKey:   parentComplexKey.FullKey(),
 		CurrentNodeJSON: string(JSONObj),
+		BusinessTime:    businessTime,
 	}
 }
 
@@ -129,14 +137,4 @@ func Deserialize(in []model.DBTreeNode, layersTypes []model.IDable) (*Tree, erro
 	}
 
 	return tree, nil
-}
-
-func normalizeForCanonizing(in []model.DBTreeNode) []string {
-	resultStrings := make([]string, 0)
-	for _, el := range in {
-		jsonBytes, _ := json.Marshal(el)
-		resultStrings = append(resultStrings, string(jsonBytes))
-	}
-	sort.Strings(resultStrings)
-	return resultStrings
 }
