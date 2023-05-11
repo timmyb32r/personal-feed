@@ -242,7 +242,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
-		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json FROM events ORDER BY business_date DESC LIMIT 10;`),
+		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json FROM events ORDER BY business_time DESC LIMIT 10;`),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)
