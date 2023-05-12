@@ -35,7 +35,7 @@ func TestRepo(t *testing.T) {
 	newNodes := []model.DBTreeNode{
 		{
 			Depth:           1,
-			ParentFullKey:   "parent",
+			CurrentFullKey:  "parent!abc",
 			CurrentNodeJSON: "{}",
 		},
 	}

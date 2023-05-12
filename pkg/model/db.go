@@ -8,9 +8,14 @@ import (
 type DBTreeNode struct {
 	SourceID        int       `db:"source_id"`
 	Depth           int       `db:"depth"` // 0 means 'root'
-	ParentFullKey   string    `db:"parent_full_key"`
+	CurrentFullKey  string    `db:"current_full_key"`
 	CurrentNodeJSON string    `db:"current_node_json"` // here are serialized object of current depth type
 	BusinessTime    time.Time `db:"current_node_json"`
+}
+
+func (n *DBTreeNode) ParentFullKey() string {
+	parentFullKey, _ := ParseComplexKey(n.CurrentFullKey)
+	return parentFullKey.ParentKey().FullKey()
 }
 
 type Source struct {
