@@ -37,17 +37,18 @@ CREATE TABLE IF NOT EXISTS crawlers
     name text
 );
 
-CREATE TABLE IF NOT EXISTS events
-(
-    id bigserial primary key,
-    source_id int,
-    depth int,
-    parent_full_key text,
-    current_node_json json,
-    insert_date timestamp,
-    business_time timestamp
+CREATE TABLE public.events (
+	id bigserial NOT NULL,
+	source_id int4 NULL,
+	"depth" int4 NULL,
+	current_node_json json NULL,
+	insert_date timestamp NULL,
+	business_time timestamp NULL,
+	current_full_key text NULL,
+	CONSTRAINT events_pkey PRIMARY KEY (id),
+	CONSTRAINT events_un UNIQUE (current_full_key)
 );
-CREATE INDEX IF NOT EXISTS events_by_source_id ON events (source_id, id);
+CREATE INDEX events_by_source_id ON public.events USING btree (source_id, id);
 
 CREATE TABLE IF NOT EXISTS users
 (

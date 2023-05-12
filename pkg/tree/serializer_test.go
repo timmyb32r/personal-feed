@@ -18,7 +18,7 @@ func normalizeForCanonizing(t *testing.T, in []model.DBTreeNode) []string {
 	type nodeWithoutBusinessTime struct {
 		SourceID        int    `db:"source_id"`
 		Depth           int    `db:"depth"` // 0 means 'root'
-		ParentFullKey   string `db:"parent_full_key"`
+		CurrentFullKey  string `db:"current_full_key"`
 		CurrentNodeJSON string `db:"current_node_json"` // here are serialized object of current depth type
 	}
 
@@ -82,17 +82,17 @@ func TestSerde(t *testing.T) {
 	resultTreeNodes := serialize(sourceID, knownTree)
 	resultStrings := normalizeForCanonizing(t, resultTreeNodes)
 	canonized := []string{
-		`{"SourceID":1,"Depth":1,"ParentFullKey":"ROOT","CurrentNodeJSON":"\"A\""}`,
-		`{"SourceID":1,"Depth":1,"ParentFullKey":"ROOT","CurrentNodeJSON":"\"B\""}`,
-		`{"SourceID":1,"Depth":2,"ParentFullKey":"ROOT!A","CurrentNodeJSON":"\"C\""}`,
-		`{"SourceID":1,"Depth":2,"ParentFullKey":"ROOT!A","CurrentNodeJSON":"\"D\""}`,
-		`{"SourceID":1,"Depth":2,"ParentFullKey":"ROOT!B","CurrentNodeJSON":"\"E\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!A!C","CurrentNodeJSON":"\"F\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!A!C","CurrentNodeJSON":"\"G\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!A!C","CurrentNodeJSON":"\"H\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!A!D","CurrentNodeJSON":"\"I\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!B!E","CurrentNodeJSON":"\"J\""}`,
-		`{"SourceID":1,"Depth":3,"ParentFullKey":"ROOT!B!E","CurrentNodeJSON":"\"K\""}`,
+		`{"SourceID":1,"Depth":1,"CurrentFullKey":"ROOT!A","CurrentNodeJSON":"\"A\""}`,
+		`{"SourceID":1,"Depth":1,"CurrentFullKey":"ROOT!B","CurrentNodeJSON":"\"B\""}`,
+		`{"SourceID":1,"Depth":2,"CurrentFullKey":"ROOT!A!C","CurrentNodeJSON":"\"C\""}`,
+		`{"SourceID":1,"Depth":2,"CurrentFullKey":"ROOT!A!D","CurrentNodeJSON":"\"D\""}`,
+		`{"SourceID":1,"Depth":2,"CurrentFullKey":"ROOT!B!E","CurrentNodeJSON":"\"E\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!A!C!F","CurrentNodeJSON":"\"F\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!A!C!G","CurrentNodeJSON":"\"G\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!A!C!H","CurrentNodeJSON":"\"H\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!A!D!I","CurrentNodeJSON":"\"I\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!B!E!J","CurrentNodeJSON":"\"J\""}`,
+		`{"SourceID":1,"Depth":3,"CurrentFullKey":"ROOT!B!E!K","CurrentNodeJSON":"\"K\""}`,
 	}
 	require.Equal(t, canonized, resultStrings)
 

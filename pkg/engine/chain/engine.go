@@ -91,6 +91,8 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 					return xerrors.Errorf("unable to insert items, err: %w", err)
 				}
 				e.logger.Infof("    finish handling el: %s", newItem.CurrentNodeJSON)
+
+				time.Sleep(2 * time.Second) // to not to ddos
 			}
 
 		}

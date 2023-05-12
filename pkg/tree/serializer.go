@@ -20,7 +20,7 @@ func SerializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.ID
 	return &model.DBTreeNode{
 		SourceID:        sourceID,
 		Depth:           parentComplexKey.Depth() + 1,
-		ParentFullKey:   parentComplexKey.FullKey(),
+		CurrentFullKey:  parentComplexKey.FullKey() + "!" + key.ID(),
 		CurrentNodeJSON: string(JSONObj),
 		BusinessTime:    businessTime,
 	}
@@ -119,7 +119,7 @@ func Deserialize(in []model.DBTreeNode, layersTypes []model.IDable) (*Tree, erro
 			}
 			realObj := reflect.ValueOf(pointerToRealObj).Elem().Interface()
 
-			parentKey, err := model.ParseComplexKey(el.ParentFullKey)
+			parentKey, err := model.ParseComplexKey(el.ParentFullKey())
 			if err != nil {
 				return nil, xerrors.Errorf("%w", err)
 			}

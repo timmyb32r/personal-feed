@@ -168,7 +168,7 @@ func (r *Repo) ExtractTreeNodesTx(tx repo.Tx, sourceID int) ([]model.DBTreeNode,
 	result := make([]model.DBTreeNode, 0)
 	for rows.Next() {
 		var node model.DBTreeNode
-		err = rows.Scan(&node.Depth, &node.ParentFullKey, &node.CurrentNodeJSON)
+		err = rows.Scan(&node.Depth, &node.CurrentFullKey, &node.CurrentNodeJSON)
 		if err != nil {
 			return nil, xerrors.Errorf("unable to scan, err: ", err)
 		}
@@ -250,7 +250,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	result := make([]model.DBTreeNode, 0)
 	for rows.Next() {
 		var node model.DBTreeNode
-		err = rows.Scan(&node.Depth, &node.ParentFullKey, &node.CurrentNodeJSON)
+		err = rows.Scan(&node.Depth, &node.CurrentFullKey, &node.CurrentNodeJSON)
 		if err != nil {
 			return nil, xerrors.Errorf("unable to scan, err: ", err)
 		}
