@@ -20,7 +20,7 @@ func SerializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.ID
 	return &model.DBTreeNode{
 		SourceID:        sourceID,
 		Depth:           parentComplexKey.Depth() + 1,
-		CurrentFullKey:  parentComplexKey.FullKey() + "!" + key.ID(),
+		CurrentFullKey:  parentComplexKey.MakeSubkey(key.ID()).FullKey(),
 		CurrentNodeJSON: string(JSONObj),
 		BusinessTime:    businessTime,
 	}
