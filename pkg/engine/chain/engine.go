@@ -84,7 +84,8 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 				if len(docs) != 1 {
 					return xerrors.Errorf("len(docs) != 1, err: %w", err)
 				}
-				dbTreeNode := tree.SerializeDoc(e.source.ID, "ROOT!"+currID+"!doc", docs[0])
+				fullKey := model.NewComplexKey("ROOT").MakeSubkey(currID).MakeSubkey("doc").FullKey()
+				dbTreeNode := tree.SerializeDoc(e.source.ID, fullKey, docs[0])
 
 				err = e.db.InsertNewTreeNodes(ctx, e.source.ID, []model.DBTreeNode{newItem, *dbTreeNode})
 				if err != nil {
