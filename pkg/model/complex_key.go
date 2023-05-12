@@ -46,8 +46,12 @@ func (k *ComplexKey) Depth() int {
 }
 
 func (k *ComplexKey) MakeSubkey(in string) *ComplexKey {
+	keysCopy := make([]string, len(k.keys))
+	copy(keysCopy, k.keys)
+	keysCopy = append(keysCopy, in)
+
 	return &ComplexKey{
-		keys: append(k.keys, in),
+		keys: keysCopy,
 	}
 }
 
