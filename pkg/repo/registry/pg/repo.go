@@ -127,10 +127,10 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, sourceID int, nodes []model.DBTr
 	index := 1
 	for _, node := range nodes {
 		elems = append(elems, fmt.Sprintf("($%d, $%d, $%d, $%d, now(), $%d)", index, index+1, index+2, index+3, index+4))
-		args = append(args, sourceID, node.Depth, node.ParentFullKey, node.CurrentNodeJSON, node.BusinessTime)
+		args = append(args, sourceID, node.Depth, node.CurrentFullKey, node.CurrentNodeJSON, node.BusinessTime)
 		index += 5
 	}
-	query := `INSERT INTO events (source_id, depth, parent_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(elems, ",") + ";"
+	query := `INSERT INTO events (source_id, depth, current_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(elems, ",") + ";"
 	unwrappedTx := tx.(pgx.Tx)
 	_, err := unwrappedTx.Exec(context.Background(), query, args...)
 	return err
@@ -160,7 +160,7 @@ func (r *Repo) ExtractTreeNodesTx(tx repo.Tx, sourceID int) ([]model.DBTreeNode,
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
-		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json FROM events WHERE source_id=%d;`, sourceID),
+		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events WHERE source_id=%d;`, sourceID),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)
@@ -242,7 +242,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		context.Background(),
-		fmt.Sprintf(`SELECT depth, parent_full_key, current_node_json FROM events ORDER BY business_time DESC LIMIT 10;`),
+		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events ORDER BY business_time DESC LIMIT 10;`),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)
