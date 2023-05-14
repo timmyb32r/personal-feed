@@ -86,12 +86,12 @@ func (s *Server) runIteration(ctx context.Context, currRepo repo.Repo, source *m
 }
 
 func (s *Server) HandleAllSources(ctx context.Context) error {
-	currRepo, err := repo.NewRepo(s.config.Repo, s.logger)
+	currRepo, err := repo.NewRepo(ctx, s.config.Repo, s.logger)
 	if err != nil {
 		return xerrors.Errorf("unable to create repo: %w", err)
 	}
 
-	sources, err := currRepo.ListSources()
+	sources, err := currRepo.ListSources(ctx)
 	if err != nil {
 		return err
 	}

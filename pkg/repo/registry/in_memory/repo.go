@@ -20,27 +20,27 @@ func (r *Repo) GenerateLiquibaseProperties() (string, error) {
 	return "", xerrors.Errorf("liquibase is unsupported for in-memory repo")
 }
 
-func (r *Repo) NewTx() (repo.Tx, error) {
+func (r *Repo) NewTx(_ context.Context) (repo.Tx, error) {
 	return &TxStub{}, nil
 }
 
-func (r *Repo) GetUserInfo(_ repo.Tx, _ string) (*model.User, error) {
+func (r *Repo) GetUserInfo(_ repo.Tx, _ context.Context, _ string) (*model.User, error) {
 	return nil, nil
 }
 
-func (r *Repo) UpdateUserInfo(_ repo.Tx, _ string, _ *model.User) error {
+func (r *Repo) UpdateUserInfo(_ repo.Tx, _ context.Context, _ string, _ *model.User) error {
 	return nil
 }
 
-func (r *Repo) ListSources() ([]model.Source, error) {
+func (r *Repo) ListSources(_ context.Context) ([]model.Source, error) {
 	return nil, nil
 }
 
-func (r *Repo) InsertNewTreeNodes(_ context.Context, sourceID int, nodes []model.DBTreeNode) error {
-	return r.InsertNewTreeNodesTx(nil, sourceID, nodes)
+func (r *Repo) InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []model.DBTreeNode) error {
+	return r.InsertNewTreeNodesTx(nil, ctx, sourceID, nodes)
 }
 
-func (r *Repo) InsertNewTreeNodesTx(_ repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (r *Repo) InsertNewTreeNodesTx(_ repo.Tx, _ context.Context, sourceID int, nodes []model.DBTreeNode) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -52,15 +52,15 @@ func (r *Repo) InsertNewTreeNodesTx(_ repo.Tx, sourceID int, nodes []model.DBTre
 	return nil
 }
 
-func (r *Repo) ExtractTreeNodesTx(_ repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (r *Repo) ExtractTreeNodesTx(_ repo.Tx, _ context.Context, sourceID int) ([]model.DBTreeNode, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	return r.base[sourceID], nil
 }
 
-func (r *Repo) ExtractTreeNodes(_ context.Context, sourceID int) ([]model.DBTreeNode, error) {
-	return r.ExtractTreeNodesTx(nil, sourceID)
+func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTreeNode, error) {
+	return r.ExtractTreeNodesTx(nil, ctx, sourceID)
 }
 
 func (r *Repo) GetNextCronPeriod(_ context.Context) (lastRunTime *time.Time, currentTime time.Time, err error) {
@@ -87,19 +87,19 @@ func (r *Repo) Len() int {
 	return sum
 }
 
-func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
+func (r *Repo) SetState(_ context.Context, _ int, _ string) error {
 	return nil
 }
 
-func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, link, body string) error {
+func (r *Repo) InsertSourceIterationTx(_ repo.Tx, _ context.Context, _ int, _, _ string) error {
 	return nil
 }
 
-func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, body string) error {
+func (r *Repo) InsertSourceIteration(_ context.Context, _ int, _, _ string) error {
 	return nil
 }
 
-func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx) ([]model.DBTreeNode, error) {
+func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx, _ context.Context) ([]model.DBTreeNode, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -111,7 +111,11 @@ func (r *Repo) TestExtractAllTreeNodes(_ repo.Tx) ([]model.DBTreeNode, error) {
 	return result, nil
 }
 
-func NewRepo(_ interface{}, _ *logrus.Logger) (repo.Repo, error) {
+func (r *Repo) Close(_ context.Context) error {
+	return nil
+}
+
+func NewRepo(_ context.Context, _ interface{}, _ *logrus.Logger) (repo.Repo, error) {
 	return &Repo{
 		base:            make(map[int][]model.DBTreeNode),
 		cronLastRunTime: nil,

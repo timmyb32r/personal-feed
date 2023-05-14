@@ -106,12 +106,12 @@ func TestEngine(t *testing.T) {
 		Schedule:    "",
 	}
 
-	inMemoryRepoWrapped, _ := in_memory.NewRepo(struct{}{}, nil)
+	ctx := context.TODO()
+
+	inMemoryRepoWrapped, _ := in_memory.NewRepo(ctx, struct{}{}, nil)
 	inMemoryRepo := inMemoryRepoWrapped.(*in_memory.Repo)
 	var log = logrus.New()
 	var err error
-
-	ctx := context.TODO()
 
 	stubNotifier := func(crawlerDescr string, expected *int, real int) {}
 

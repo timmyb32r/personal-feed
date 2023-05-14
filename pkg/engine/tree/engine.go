@@ -24,14 +24,14 @@ func (e *Engine) RunOnce(ctx context.Context, _ operation.Operation) error {
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
-	tx, err := e.db.NewTx()
+	tx, err := e.db.NewTx(ctx)
 	if err != nil {
 		return xerrors.Errorf("unable to begin new transaction: %w", err)
 	}
 
 	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
-	knownNodes, err := e.db.ExtractTreeNodesTx(tx, e.source.ID)
+	knownNodes, err := e.db.ExtractTreeNodesTx(tx, ctx, e.source.ID)
 	if err != nil {
 		return xerrors.Errorf("unable to extract tree nodes: %w", err)
 	}
@@ -79,7 +79,7 @@ func (e *Engine) RunOnce(ctx context.Context, _ operation.Operation) error {
 		return xerrors.Errorf("unable to build diff tree, err: %w", err)
 	}
 
-	err = e.db.InsertNewTreeNodesTx(tx, e.source.ID, append(newDBInternalNodes, newDBDocs...))
+	err = e.db.InsertNewTreeNodesTx(tx, ctx, e.source.ID, append(newDBInternalNodes, newDBDocs...))
 	if err != nil {
 		return xerrors.Errorf("unable to inset new nodes, err: %w", err)
 	}

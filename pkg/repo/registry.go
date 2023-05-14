@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"github.com/sirupsen/logrus"
 	"personal-feed/pkg/config"
 	"personal-feed/pkg/config/configsengine"
@@ -8,7 +9,7 @@ import (
 	"strings"
 )
 
-type repoFactory func(interface{}, *logrus.Logger) (Repo, error)
+type repoFactory func(context.Context, interface{}, *logrus.Logger) (Repo, error)
 
 var configNameToRepoFactory = make(map[string]repoFactory)
 
