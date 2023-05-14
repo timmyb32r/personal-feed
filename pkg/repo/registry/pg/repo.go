@@ -28,8 +28,8 @@ func (r *Repo) GenerateLiquibaseProperties() (string, error) {
 	return result, nil
 }
 
-func (r *Repo) NewTx() (repo.Tx, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+func (r *Repo) NewTx(ctx context.Context) (repo.Tx, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadWrite})
@@ -39,10 +39,10 @@ func (r *Repo) NewTx() (repo.Tx, error) {
 	return tx, err
 }
 
-func (r *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
+func (r *Repo) GetUserInfo(tx repo.Tx, ctx context.Context, userEmail string) (*model.User, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
-		context.Background(),
+		ctx,
 		`SELECT id, email, tg_chat_id, nickname, pass_hash FROM users WHERE email=$1;`,
 		userEmail,
 	)
@@ -63,16 +63,16 @@ func (r *Repo) GetUserInfo(tx repo.Tx, userEmail string) (*model.User, error) {
 	return user, nil
 }
 
-func (r *Repo) UpdateUserInfo(tx repo.Tx, userEmail string, user *model.User) error {
+func (r *Repo) UpdateUserInfo(tx repo.Tx, ctx context.Context, userEmail string, user *model.User) error {
 	query := `UPDATE users SET tg_chat_id=$1, nickname=$2, pass_hash=$3 WHERE email=$4;`
 	unwrappedTx := tx.(pgx.Tx)
-	_, err := unwrappedTx.Exec(context.Background(), query, user.TgChatID, user.Nickname, user.PassHash, userEmail)
+	_, err := unwrappedTx.Exec(ctx, query, user.TgChatID, user.Nickname, user.PassHash, userEmail)
 	return err
 }
 
-func (r *Repo) ListSources() ([]model.Source, error) {
+func (r *Repo) ListSources(ctx context.Context) ([]model.Source, error) {
 	rows, err := r.conn.Query(
-		context.Background(),
+		ctx,
 		`SELECT id, description, crawler_id, crawler_meta, schedule, num_should_be_matched, history_state FROM source;`,
 	)
 	if err != nil {
@@ -97,14 +97,14 @@ func (r *Repo) InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []mod
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
-	tx, err := r.NewTx()
+	tx, err := r.NewTx(ctx)
 	if err != nil {
 		return xerrors.Errorf("unable to create transaction, err: %w", err)
 	}
 
 	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
-	err = r.InsertNewTreeNodesTx(tx, sourceID, nodes)
+	err = r.InsertNewTreeNodesTx(tx, ctx, sourceID, nodes)
 	if err != nil {
 		return xerrors.Errorf("unable to insert nodes, err: %w", err)
 	}
@@ -118,7 +118,7 @@ func (r *Repo) InsertNewTreeNodes(ctx context.Context, sourceID int, nodes []mod
 	return nil
 }
 
-func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, sourceID int, nodes []model.DBTreeNode) error {
+func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID int, nodes []model.DBTreeNode) error {
 	if len(nodes) == 0 {
 		return nil
 	}
@@ -132,7 +132,7 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, sourceID int, nodes []model.DBTr
 	}
 	query := `INSERT INTO events (source_id, depth, current_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(elems, ",") + ";"
 	unwrappedTx := tx.(pgx.Tx)
-	_, err := unwrappedTx.Exec(context.Background(), query, args...)
+	_, err := unwrappedTx.Exec(ctx, query, args...)
 	return err
 }
 
@@ -140,14 +140,14 @@ func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTr
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
-	tx, err := r.NewTx()
+	tx, err := r.NewTx(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to create transaction, err: %w", err)
 	}
 
 	rollbacks.Add(func() { _ = tx.Rollback(ctx) })
 
-	result, err := r.ExtractTreeNodesTx(tx, sourceID)
+	result, err := r.ExtractTreeNodesTx(tx, ctx, sourceID)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to extract nodes, err: %w", err)
 	}
@@ -156,10 +156,10 @@ func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTr
 	return result, nil
 }
 
-func (r *Repo) ExtractTreeNodesTx(tx repo.Tx, sourceID int) ([]model.DBTreeNode, error) {
+func (r *Repo) ExtractTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID int) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
-		context.Background(),
+		ctx,
 		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events WHERE source_id=%d;`, sourceID),
 	)
 	if err != nil {
@@ -203,7 +203,7 @@ func (r *Repo) SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time
 
 func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
 	query := `UPDATE source SET history_state=$1 WHERE id=$2;`
-	_, err := r.conn.Exec(context.Background(), query, state, sourceID)
+	_, err := r.conn.Exec(ctx, query, state, sourceID)
 	return err
 }
 
@@ -222,7 +222,7 @@ func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, bo
 	rollbacks := util.Rollbacks{}
 	defer rollbacks.Do()
 
-	tx, err := r.NewTx()
+	tx, err := r.NewTx(ctx)
 	if err != nil {
 		return xerrors.Errorf("unable to create transaction, err: %w", err)
 	}
@@ -238,10 +238,10 @@ func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, bo
 	return nil
 }
 
-func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
+func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx, ctx context.Context) ([]model.DBTreeNode, error) {
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
-		context.Background(),
+		ctx,
 		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events ORDER BY business_time DESC LIMIT 10;`),
 	)
 	if err != nil {
@@ -262,14 +262,14 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx) ([]model.DBTreeNode, error) {
 	return result, nil
 }
 
-func (r *Repo) Close() error {
-	return r.conn.Close(context.Background())
+func (r *Repo) Close(ctx context.Context) error { // absent in abstract.go
+	return r.conn.Close(ctx)
 }
 
-func NewRepo(cfg interface{}, logger *logrus.Logger) (repo.Repo, error) {
+func NewRepo(ctx context.Context, cfg interface{}, logger *logrus.Logger) (repo.Repo, error) {
 	cfgUnwrapped := cfg.(*RepoConfigPG) // unpack
 	cfgUnwrappedCopy := *cfgUnwrapped
-	conn, err := pgx.Connect(context.Background(), cfgUnwrapped.ToConnString())
+	conn, err := pgx.Connect(ctx, cfgUnwrapped.ToConnString())
 	if err != nil {
 		return nil, xerrors.Errorf("unable to connect to the database, err: %w", err)
 	}

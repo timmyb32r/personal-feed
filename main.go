@@ -39,8 +39,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+
 	if generateLiquibaseCfg != nil && *generateLiquibaseCfg {
-		repoClient, err := repo.NewRepo(currConfig.Repo, logger)
+		repoClient, err := repo.NewRepo(ctx, currConfig.Repo, logger)
 		if err != nil {
 			panic(err)
 		}

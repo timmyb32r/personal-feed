@@ -82,19 +82,19 @@ func (s *HTTPServer) shutdown() {
 }
 
 func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
-	repoClient, err := repo.NewRepo(s.config.Repo, s.logger)
+	repoClient, err := repo.NewRepo(r.Context(), s.config.Repo, s.logger)
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
 		return
 	}
 
-	tx, err := repoClient.NewTx()
+	tx, err := repoClient.NewTx(r.Context())
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error1::%s", err.Error())))
 		return
 	}
 
-	nodes, err := repoClient.TestExtractAllTreeNodes(tx)
+	nodes, err := repoClient.TestExtractAllTreeNodes(tx, r.Context())
 	if err != nil {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error2::%s", err.Error())))
 		return

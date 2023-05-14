@@ -159,10 +159,10 @@ func TestChain(t *testing.T) {
 
 	stubNotifier := func(crawlerDescr string, expected *int, real int) {}
 
-	inMemoryRepoWrapped, _ := in_memory.NewRepo(struct{}{}, nil)
-	inMemoryRepo := inMemoryRepoWrapped.(*in_memory.Repo)
-
 	ctx := context.TODO()
+
+	inMemoryRepoWrapped, _ := in_memory.NewRepo(ctx, struct{}{}, nil)
+	inMemoryRepo := inMemoryRepoWrapped.(*in_memory.Repo)
 
 	op := operation.Operation{
 		OperationType: operation.OpTypeRegularUpdate,
