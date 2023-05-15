@@ -93,6 +93,7 @@ func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error1::%s", err.Error())))
 		return
 	}
+	defer tx.Rollback(r.Context())
 
 	nodes, err := repoClient.TestExtractAllTreeNodes(tx, r.Context())
 	if err != nil {

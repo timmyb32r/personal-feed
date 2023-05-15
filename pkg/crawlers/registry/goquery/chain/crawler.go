@@ -31,12 +31,22 @@ func (n stNt) GetBusinessTime() *time.Time {
 }
 
 type stContent struct {
-	Link    string
-	Content string
+	Link         string
+	BusinessTime *time.Time
+	Content      string
 }
 
 func (n stContent) ID() string {
 	return n.Link
+}
+
+func (n stContent) GetBusinessTime() *time.Time {
+	return n.BusinessTime
+}
+
+func (n stContent) SetBusinessTime(in *time.Time) {
+	inCopy := *in
+	n.BusinessTime = &inCopy
 }
 
 type Crawler struct {
