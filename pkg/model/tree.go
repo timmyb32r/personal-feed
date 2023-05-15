@@ -35,4 +35,5 @@ type Node interface {
 
 type BusinessTimeable interface {
 	GetBusinessTime() *time.Time
+	SetBusinessTime(*time.Time)
 }

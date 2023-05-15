@@ -59,6 +59,7 @@ func (t *Tree) InsertDoc(inDoc doc) error {
 	return nil
 }
 
+// ExtractInternalNodes returns map: fullKey->node
 func (t *Tree) ExtractInternalNodes() map[string]*node {
 	return extractInternalNodes(t.root)
 }
@@ -69,6 +70,23 @@ func (t *Tree) ExtractDocs() map[string]doc {
 
 func (t *Tree) ExtractDocsUnwrapped() map[string]model.IDable {
 	return extractDocsUnwrapped(t.root)
+}
+
+// ExtractFullKeysSet implements naive implementation
+func (t *Tree) ExtractFullKeysSet() map[string]bool {
+	result := make(map[string]bool)
+
+	internal := t.ExtractInternalNodes()
+	for k := range internal {
+		result[k] = true
+	}
+
+	docs := t.ExtractDocs()
+	for k := range docs {
+		result[k] = true
+	}
+
+	return result
 }
 
 func (t *Tree) Serialize(sourceID int) []model.DBTreeNode {

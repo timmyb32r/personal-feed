@@ -203,8 +203,14 @@ func (r *Repo) SetCronLastRunTime(ctx context.Context, cronLastRunTime time.Time
 
 func (r *Repo) SetState(ctx context.Context, sourceID int, state string) error {
 	query := `UPDATE source SET history_state=$1 WHERE id=$2;`
-	_, err := r.conn.Exec(ctx, query, state, sourceID)
-	return err
+	res, err := r.conn.Exec(ctx, query, state, sourceID)
+	if err != nil {
+		return xerrors.Errorf("unable to update state, err: %w", err)
+	}
+	if res.RowsAffected() != int64(1) {
+		return xerrors.Errorf("SetState updated wrong amount of rows: %d", res.RowsAffected())
+	}
+	return nil
 }
 
 func (r *Repo) InsertSourceIterationTx(tx repo.Tx, ctx context.Context, sourceID int, link, body string) error {
