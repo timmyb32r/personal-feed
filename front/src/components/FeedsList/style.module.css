@@ -1,0 +1,14 @@
+.list {
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  text-decoration: underline;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+.list li:hover, .list li.active {
+  color: rgb(213, 27, 148)
+}

@@ -1,0 +1,17 @@
+{
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"],
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "env": {
+        "es6": true
+    },
+    "rules": {
+        "quotes": ["error", "double"],
+        "no-trailing-spaces": "error",
+        "semi": ["error", "never"],
+        "comma-dangle": ["error", "always-multiline"],
+        "@typescript-eslint/explicit-member-accessibility": ["error", { "accessibility": "no-public" }]
+    }
+}
