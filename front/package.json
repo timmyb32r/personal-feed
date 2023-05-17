@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "rm -rf ../pkg/server/dist && mkdir ../pkg/server/dist && echo '' >../pkg/server/dist/.gitkeep && parcel build src/index.html --dist-dir ../pkg/server/dist",
+    "build": "rm -rf ../pkg/server/dist && mkdir ../pkg/server/dist && echo '' >../pkg/server/dist/.gitkeep && echo '.' >../pkg/server/dist/stub && parcel build src/index.html --dist-dir ../pkg/server/dist",
     "dev": "parcel serve src/index.html",
     "test": "jest"
   },
