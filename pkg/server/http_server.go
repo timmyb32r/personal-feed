@@ -41,6 +41,7 @@ func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/", s.RootHandler)
+	router.PathPrefix("/index.").Handler(newStaticHandler())
 
 	s.httpServer.Handler = router
 
@@ -108,4 +109,8 @@ func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result := strings.Join(buf, "\n")
 	_, _ = w.Write([]byte(result))
+}
+
+func (s *HTTPServer) DistHandler(w http.ResponseWriter, r *http.Request) {
+
 }

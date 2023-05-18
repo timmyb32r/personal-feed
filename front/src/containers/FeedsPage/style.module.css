@@ -1,0 +1,20 @@
+.feedsPage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-flow: row nowrap;
+}
+
+.feedsList {
+  padding: 20px;
+  width: 300px;
+  flex-shrink: 0;
+  overflow: auto;
+  background-color: #f0f0f0;
+}
+
+.feed {
+  padding: 20px;
+  flex-grow: 1;
+  overflow: auto;
+}

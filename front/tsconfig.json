@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "outDir": ".tsc_builds",
+      "target": "es6",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "experimentalDecorators": true,
+      "allowJs": true,
+      "jsx": "react",
+      "plugins": [{ "name": "typescript-plugin-css-modules" }]
+    }
+}

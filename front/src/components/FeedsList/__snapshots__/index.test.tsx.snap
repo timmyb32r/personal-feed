@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FeedsList Active item is highlighted 1`] = `
+<ol
+  className="list"
+>
+  <li
+    className=""
+    onClick={[Function]}
+  >
+    Test 1
+  </li>
+  <li
+    className="active"
+    onClick={[Function]}
+  >
+    Test 2
+  </li>
+  <li
+    className=""
+    onClick={[Function]}
+  >
+    Test 3
+  </li>
+</ol>
+`;
