@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -9,6 +11,8 @@ import (
 	"os"
 	"os/signal"
 	"personal-feed/pkg/config"
+	"personal-feed/pkg/repo"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -21,6 +25,25 @@ type HTTPServer struct {
 	shutdownReq chan bool
 	once        sync.Once
 }
+
+// DEBUG
+
+type sourceIDHandlerFunc func(http.ResponseWriter, *http.Request)
+type sourceIDHandler struct {
+	sourceIDHandlerFuncField sourceIDHandlerFunc
+}
+
+func (q *sourceIDHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	q.sourceIDHandlerFuncField(w, r)
+}
+
+func newSourceIDHandler(sourceIDHandlerFuncIn sourceIDHandlerFunc) *sourceIDHandler {
+	return &sourceIDHandler{
+		sourceIDHandlerFuncField: sourceIDHandlerFuncIn,
+	}
+}
+
+// DEBUG
 
 func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 	s := &HTTPServer{
@@ -36,7 +59,7 @@ func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 
 	router := mux.NewRouter()
 
-	handler := newStaticHandler()
+	handler := newStaticHandler(logger)
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handler.ServeHTTPURI(w, "/index.html")
 	})
@@ -44,6 +67,17 @@ func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 		handler.ServeHTTPURI(w, "/favicon.ico")
 	})
 	router.PathPrefix("/index.").Handler(handler)
+
+	// DEBUG
+	router.HandleFunc("/api/source_ids", func(w http.ResponseWriter, r *http.Request) {
+		logger.Infof("[source_ids] got request on URI: %s", r.RequestURI)
+		s.sourcesHandler(w, r)
+	})
+	router.PathPrefix("/api/source_id/").Handler(newSourceIDHandler(func(w http.ResponseWriter, r *http.Request) {
+		logger.Infof("[source_id] got request on URI: %s", r.RequestURI)
+		s.sourceIDHandler(w, r)
+	}))
+	// DEBUG
 
 	s.httpServer.Handler = router
 
@@ -84,35 +118,89 @@ func (s *HTTPServer) shutdown() {
 	})
 }
 
-//func (s *HTTPServer) RootHandler(w http.ResponseWriter, r *http.Request) {
-//	repoClient, err := repo.NewRepo(r.Context(), s.config.Repo, s.logger)
-//	if err != nil {
-//		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
-//		return
-//	}
-//
-//	tx, err := repoClient.NewTx(r.Context())
-//	if err != nil {
-//		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error1::%s", err.Error())))
-//		return
-//	}
-//	defer tx.Rollback(r.Context())
-//
-//	nodes, err := repoClient.TestExtractAllTreeNodes(tx, r.Context())
-//	if err != nil {
-//		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error2::%s", err.Error())))
-//		return
-//	}
-//
-//	buf := []string{"RESULT:"}
-//	for _, el := range nodes {
-//		elArr, _ := json.Marshal(el)
-//		buf = append(buf, string(elArr))
-//	}
-//	result := strings.Join(buf, "\n")
-//	_, _ = w.Write([]byte(result))
-//}
+// DEBUG
 
-func (s *HTTPServer) DistHandler(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPServer) sourcesHandler(w http.ResponseWriter, r *http.Request) {
+	repoClient, err := repo.NewRepo(r.Context(), s.config.Repo, s.logger)
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
+		return
+	}
 
+	tx, err := repoClient.NewTx(r.Context())
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::sourcesHandler::error1::%s", err.Error())))
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	sources, err := repoClient.ListSources(r.Context())
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::sourcesHandler::error2::%s", err.Error())))
+		return
+	}
+
+	type idAndTitle struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	}
+	result := make([]idAndTitle, 0)
+
+	for _, el := range sources {
+		result = append(result, idAndTitle{
+			ID:    strconv.Itoa(el.ID),
+			Title: el.Description,
+		})
+	}
+	resultArr, _ := json.Marshal(result)
+	s.logger.Infof("[sources] made response for URI: %s, response: %s", r.RequestURI, string(resultArr))
+	_, _ = w.Write(resultArr)
 }
+
+func (s *HTTPServer) sourceIDHandler(w http.ResponseWriter, r *http.Request) {
+	repoClient, err := repo.NewRepo(r.Context(), s.config.Repo, s.logger)
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::RootHandler::error0::%s", err.Error())))
+		return
+	}
+
+	tx, err := repoClient.NewTx(r.Context())
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::sourceIDHandler::error1::%s", err.Error())))
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	nodes, err := repoClient.TestExtractAllTreeNodes(tx, r.Context())
+	if err != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::sourceIDHandler::error2::%s", err.Error())))
+		return
+	}
+
+	type feedEvent struct {
+		ID          string    `json:"id"`
+		At          time.Time `json:"at"`
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+	}
+	type feed struct {
+		Events []feedEvent `json:"events"`
+	}
+	result := feed{
+		Events: make([]feedEvent, 0),
+	}
+
+	for _, el := range nodes {
+		result.Events = append(result.Events, feedEvent{
+			ID:          el.CurrentFullKey,
+			At:          el.BusinessTime,
+			Title:       "my-title-stub",
+			Description: "", // temporary is empty - for debugging
+		})
+	}
+	resultArr, _ := json.Marshal(result)
+	s.logger.Infof("[source_id] made response for URI: %s, response: %s", r.RequestURI, string(resultArr))
+	_, _ = w.Write(resultArr)
+}
+
+// DEBUG
