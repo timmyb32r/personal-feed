@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "rm -rf ../pkg/server/dist && parcel build src/index.html --dist-dir ../pkg/server/dist --no-cache && echo '' >../pkg/server/dist/.gitkeep && echo '.' >../pkg/server/dist/stub",
+    "build": "rm -rf ../pkg/server/dist && parcel build src/index.html --dist-dir ../pkg/server/dist --no-cache && echo '' >../pkg/server/dist/.gitkeep && echo '.' >../pkg/server/dist/stub && cp ../pkg/server/favicon.ico ../pkg/server/dist/favicon.ico",
     "dev": "parcel serve src/index.html",
     "test": "jest"
   },
