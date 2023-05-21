@@ -55,20 +55,41 @@ export class FeedService {
   }
 
   async listFeeds(): Promise<FeedHead[]> {
+    //---------------------------------------------------------
     await sleep(200)
-
-    return MOCK_FEEDS.map((x) => {
-      return { title: x.title, id: x.id }
-    })
+    const response = await fetch("/api/source_ids", {
+      method: 'GET',
+    });
+    if (!response.ok) {
+      throw new Error();
+    }
+    if (response.body !== null) {
+      let result = response.json()
+      console.log(Date.now(), "timmyb32rQQQ:listFeeds:", result)
+      return result
+    }
+    //---------------------------------------------------------
   }
 
   async getFeedById(id: string): Promise<Feed> {
+    if (id == undefined) {
+      return null
+    }
     if (!this.feedsCache[id]) {
       await sleep(200)
-
-      this.feedsCache[id] = MOCK_FEEDS.find((feed) => {
-        return feed.id === id
-      })
+      //---------------------------------------------------------
+      const response = await fetch(`/api/source_id/${id}`, {
+        method: 'GET',
+      });
+      if (!response.ok) {
+        throw new Error();
+      }
+      if (response.body !== null) {
+        let result = response.json()
+        console.log(Date.now(), "timmyb32rQQQ:getFeedById:", result)
+        return result
+      }
+      //---------------------------------------------------------
     }
 
     return this.feedsCache[id]

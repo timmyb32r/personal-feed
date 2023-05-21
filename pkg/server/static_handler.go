@@ -3,6 +3,7 @@ package server
 import (
 	"embed"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 )
@@ -11,9 +12,12 @@ import (
 var distFiles embed.FS
 
 type staticHandler struct {
+	logger *logrus.Logger
 }
 
-func (h staticHandler) ServeHTTPURI(w http.ResponseWriter, uri string) {
+func (h *staticHandler) ServeHTTPURI(w http.ResponseWriter, uri string) {
+	h.logger.Infof("[ServeHTTPURI] got request on URI: %s", uri)
+
 	pathInDist := "dist" + uri
 	buf, err := distFiles.ReadFile(pathInDist)
 	if err != nil {
@@ -27,10 +31,12 @@ func (h staticHandler) ServeHTTPURI(w http.ResponseWriter, uri string) {
 	_, _ = w.Write(buf)
 }
 
-func (h staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTPURI(w, r.RequestURI)
 }
 
-func newStaticHandler() *staticHandler {
-	return &staticHandler{}
+func newStaticHandler(logger *logrus.Logger) *staticHandler {
+	return &staticHandler{
+		logger: logger,
+	}
 }
