@@ -7,7 +7,8 @@ type typeTagged configsengine.TypeTagged
 //---
 
 type Config struct {
-	Repo RepoConfig `mapstructure:"repo"`
+	Repo      RepoConfig `mapstructure:"repo"`
+	AllowCORS bool
 }
 
 type RepoConfig interface {

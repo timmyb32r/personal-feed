@@ -12,7 +12,8 @@ import (
 var distFiles embed.FS
 
 type staticHandler struct {
-	logger *logrus.Logger
+	allowCORS bool
+	logger    *logrus.Logger
 }
 
 func (h *staticHandler) ServeHTTPURI(w http.ResponseWriter, uri string) {
@@ -28,6 +29,9 @@ func (h *staticHandler) ServeHTTPURI(w http.ResponseWriter, uri string) {
 	if strings.HasSuffix(pathInDist, ".js") {
 		w.Header().Add("Content-Type", "text/javascript") // https://stackoverflow.com/a/9664327
 	}
+	if h.allowCORS {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+	}
 	_, _ = w.Write(buf)
 }
 
@@ -35,8 +39,9 @@ func (h *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTPURI(w, r.RequestURI)
 }
 
-func newStaticHandler(logger *logrus.Logger) *staticHandler {
+func newStaticHandler(allowCORS bool, logger *logrus.Logger) *staticHandler {
 	return &staticHandler{
-		logger: logger,
+		allowCORS: allowCORS,
+		logger:    logger,
 	}
 }

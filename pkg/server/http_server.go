@@ -59,7 +59,7 @@ func NewHTTPServer(config *config.Config, logger *logrus.Logger) *HTTPServer {
 
 	router := mux.NewRouter()
 
-	handler := newStaticHandler(logger)
+	handler := newStaticHandler(config.AllowCORS, logger)
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handler.ServeHTTPURI(w, "/index.html")
 	})
@@ -154,6 +154,7 @@ func (s *HTTPServer) sourcesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resultArr, _ := json.Marshal(result)
 	s.logger.Infof("[sources] made response for URI: %s, response: %s", r.RequestURI, string(resultArr))
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 	_, _ = w.Write(resultArr)
 }
 
@@ -200,6 +201,9 @@ func (s *HTTPServer) sourceIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	resultArr, _ := json.Marshal(result)
 	s.logger.Infof("[source_id] made response for URI: %s, response: %s", r.RequestURI, string(resultArr))
+	if s.config.AllowCORS {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+	}
 	_, _ = w.Write(resultArr)
 }
 

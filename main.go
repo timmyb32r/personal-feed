@@ -22,6 +22,7 @@ func main() {
 	isOnce := parser.Flag("o", "once", &argparse.Options{Required: false, Help: "if specified, exits after one cycle"})
 	skipHandlingSources := parser.Flag("s", "skip-handling-sources", &argparse.Options{Required: false, Help: "if specified, updating cycle is not turned-on"})
 	generateLiquibaseCfg := parser.Flag("l", "generate-liquibase", &argparse.Options{Required: false, Help: "generate liquibase.properties file from config"})
+	allowCORS := parser.Flag("", "allow-cors", &argparse.Options{Required: false, Help: "add header Access-Control-Allow-Origin:*"})
 	err := parser.Parse(os.Args)
 	if err != nil {
 		logger.Errorf("unable to parse arguments: %s" + err.Error())
@@ -36,6 +37,11 @@ func main() {
 	if err != nil {
 		logger.Errorf("unable to load config: %s" + err.Error())
 		os.Exit(1)
+	}
+
+	currConfig.AllowCORS = false
+	if allowCORS != nil && *allowCORS {
+		currConfig.AllowCORS = true
 	}
 
 	ctx := context.Background()

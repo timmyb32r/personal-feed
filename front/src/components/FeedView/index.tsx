@@ -6,7 +6,7 @@ export function FeedView(props: { feed: Feed }) {
   return <>
     <h2>{props.feed.title}</h2>
     <hr />
-    <ol className={style.events} key={props.feed.id}>
+    <ol className={style.events}>
       {props.feed.events.map((event) => {
         return <li className={style.event} key={event.id}>
           <h3>{event.title}</h3>
