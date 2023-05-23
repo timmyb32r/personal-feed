@@ -248,7 +248,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx, ctx context.Context) ([]model
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		ctx,
-		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events ORDER BY business_time DESC LIMIT 10;`),
+		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events WHERE depth=2 ORDER BY business_time DESC LIMIT 10;`),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)

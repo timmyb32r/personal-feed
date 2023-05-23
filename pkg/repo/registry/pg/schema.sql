@@ -46,7 +46,7 @@ CREATE TABLE public.events (
 	business_time timestamp NULL,
 	current_full_key text NULL,
 	CONSTRAINT events_pkey PRIMARY KEY (id),
-	CONSTRAINT events_un UNIQUE (id, current_full_key)
+	CONSTRAINT events_un UNIQUE (source_id, current_full_key)
 );
 CREATE INDEX events_by_source_id ON public.events USING btree (source_id, id);
 
