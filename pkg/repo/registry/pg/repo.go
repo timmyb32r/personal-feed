@@ -152,7 +152,6 @@ func (r *Repo) ExtractTreeNodes(ctx context.Context, sourceID int) ([]model.DBTr
 		return nil, xerrors.Errorf("unable to extract nodes, err: %w", err)
 	}
 
-	rollbacks.Cancel()
 	return result, nil
 }
 
@@ -238,6 +237,11 @@ func (r *Repo) InsertSourceIteration(ctx context.Context, sourceID int, link, bo
 	err = r.InsertSourceIterationTx(tx, ctx, sourceID, link, body)
 	if err != nil {
 		return xerrors.Errorf("unable to insert source iteration in tx, err: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return xerrors.Errorf("unable to commit tx, err: %w", err)
 	}
 
 	rollbacks.Cancel()
