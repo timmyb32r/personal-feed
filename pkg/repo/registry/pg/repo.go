@@ -156,7 +156,7 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID in
 	}
 
 	query = `INSERT INTO events_doc (current_full_key, body) VALUES ` + strings.Join(docsElems, ",") + ";"
-	_, err = unwrappedTx.Exec(ctx, query, eventsArgs...)
+	_, err = unwrappedTx.Exec(ctx, query, docsArgs...)
 	if err != nil {
 		return xerrors.Errorf("unable to exec query, query:%s, err:%w", query, err)
 	}
