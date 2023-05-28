@@ -2,6 +2,7 @@ import { makeAutoObservable } from "mobx"
 import { sleep } from "../lib/delays"
 import { Feed, FeedHead } from "../models/Feed"
 import { FeedEvent } from "../models/FeedEvent"
+import { wrapURI } from "./core"
 
 
 export class FeedService {
@@ -14,7 +15,7 @@ export class FeedService {
 
   async listFeeds(): Promise<FeedHead[]> {
     if (!this.headsCache) {
-      const response = await fetch("http://localhost/api/source_ids", {
+      const response = await fetch(wrapURI("/api/source_ids"), {
         method: 'GET',
       });
       if (!response.ok) {
@@ -30,7 +31,7 @@ export class FeedService {
       return null
     }
     if (!this.feedsCache[id]) {
-      const response = await fetch(`http://localhost/api/source_id/${id}`, {
+      const response = await fetch(wrapURI(`/api/source_id/${id}`), {
         method: 'GET',
         credentials: "omit",
       });
