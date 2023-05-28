@@ -50,6 +50,11 @@ CREATE TABLE public.events (
 );
 CREATE INDEX events_by_source_id ON public.events USING btree (source_id, id);
 
+CREATE TABLE public.events_doc (
+	current_full_key text NOT NULL PRIMARY KEY,
+	body text NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS users
 (
     id serial primary key,

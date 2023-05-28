@@ -75,16 +75,16 @@ func ExtractItemsByProgram(logger *logrus.Logger, doc *goquery.Document, query s
 	result := make([][]string, 0)
 
 	doc.Find(query).Each(func(i int, s *goquery.Selection) {
-		resultElem := make([]string, len(extractors))
+		resultElem := make([]string, 0, len(extractors))
 
 		for j, currExtractor := range extractors {
 			currStr, err := currExtractor.Do(s)
 			if err != nil {
 				selectedStr, _ := goquery.OuterHtml(s)
-				logger.Warnf("extractor returned err, err:%s, query:%s, selected:%s", err, query, selectedStr)
+				logger.Warnf("extractor #%d returned err, err:%s, query:%s, selected:%s", j, err, query, selectedStr)
 				return
 			}
-			resultElem[j] = currStr
+			resultElem = append(resultElem, currStr)
 		}
 
 		result = append(result, resultElem)

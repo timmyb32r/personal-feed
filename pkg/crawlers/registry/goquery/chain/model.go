@@ -11,6 +11,7 @@ type Item struct {
 	Header       extractors.Program
 	Link         extractors.Program
 	BusinessTime extractors.Program
+	Author       extractors.Program
 }
 
 type CommonGoparseSource struct {

@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"personal-feed/pkg/config"
+	goquerychaincrawler "personal-feed/pkg/crawlers/registry/goquery/chain"
+	"personal-feed/pkg/model"
 	"personal-feed/pkg/repo"
 	"strconv"
 	"sync"
@@ -158,6 +161,15 @@ func (s *HTTPServer) sourcesHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(resultArr)
 }
 
+func extractTitleFromNode(node *model.DBTreeNode) (string, error) {
+	var stContent goquerychaincrawler.StContent
+	err := json.Unmarshal([]byte(node.CurrentNodeJSON), &stContent)
+	if err != nil {
+		return "", xerrors.Errorf("unable to unmarshal doc into stContent, err: %w", err)
+	}
+	return stContent.HeaderText, nil
+}
+
 func (s *HTTPServer) sourceIDHandler(w http.ResponseWriter, r *http.Request) {
 	repoClient, err := repo.NewRepo(r.Context(), s.config.Repo, s.logger)
 	if err != nil {
@@ -192,10 +204,16 @@ func (s *HTTPServer) sourceIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, el := range nodes {
+		title, err := extractTitleFromNode(&el)
+		if err != nil {
+			_, _ = w.Write([]byte(fmt.Sprintf("HTTPServer::sourceIDHandler::error3::%s", err.Error())))
+			return
+		}
+
 		result.Events = append(result.Events, feedEvent{
 			ID:          el.CurrentFullKey,
 			At:          el.BusinessTime,
-			Title:       "my-title-stub",
+			Title:       title,
 			Description: "", // temporary is empty - for debugging
 		})
 	}
