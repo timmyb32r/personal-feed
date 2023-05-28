@@ -11,6 +11,7 @@ type DBTreeNode struct {
 	CurrentFullKey  string    `db:"current_full_key"`
 	CurrentNodeJSON string    `db:"current_node_json"` // here are serialized object of current depth type
 	BusinessTime    time.Time `db:"current_node_json"`
+	IsDoc           bool
 }
 
 func (n *DBTreeNode) ParentFullKey() string {

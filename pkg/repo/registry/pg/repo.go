@@ -122,17 +122,45 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID in
 	if len(nodes) == 0 {
 		return nil
 	}
-	elems := make([]string, 0, len(nodes))
-	args := make([]interface{}, 0, len(nodes)*4)
-	index := 1
+	eventsElems := make([]string, 0, len(nodes))
+	eventsArgs := make([]interface{}, 0, len(nodes)*5)
+	eventsIndex := 1
+
+	docsElems := make([]string, 0, len(nodes))
+	docsArgs := make([]interface{}, 0, len(nodes)*5)
+	docsIndex := 1
+
 	for _, node := range nodes {
-		elems = append(elems, fmt.Sprintf("($%d, $%d, $%d, $%d, now(), $%d)", index, index+1, index+2, index+3, index+4))
-		args = append(args, sourceID, node.Depth, node.CurrentFullKey, node.CurrentNodeJSON, node.BusinessTime)
-		index += 5
+		currentNodeJSON := node.CurrentNodeJSON
+		if node.IsDoc {
+			currentNodeJSON = ""
+		}
+
+		eventsElems = append(eventsElems, fmt.Sprintf("($%d, $%d, $%d, $%d, now(), $%d)", eventsIndex, eventsIndex+1, eventsIndex+2, eventsIndex+3, eventsIndex+4))
+		eventsArgs = append(eventsArgs, sourceID, node.Depth, node.CurrentFullKey, currentNodeJSON, node.BusinessTime)
+		eventsIndex += 5
+
+		docsElems = append(eventsElems, fmt.Sprintf("($%d, $%d)", docsIndex, docsIndex+1))
+		docsArgs = append(docsArgs, node.CurrentFullKey, node.CurrentNodeJSON)
+		docsIndex += 2
 	}
-	query := `INSERT INTO events (source_id, depth, current_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(elems, ",") + ";"
+
+	var query string
+	var err error
 	unwrappedTx := tx.(pgx.Tx)
-	_, err := unwrappedTx.Exec(ctx, query, args...)
+
+	query = `INSERT INTO events (source_id, depth, current_full_key, current_node_json, insert_date, business_time) VALUES ` + strings.Join(eventsElems, ",") + ";"
+	_, err = unwrappedTx.Exec(ctx, query, eventsArgs...)
+	if err != nil {
+		return xerrors.Errorf("unable to exec query, query:%s, err:%w", query, err)
+	}
+
+	query = `INSERT INTO events_doc (current_full_key, body) VALUES ` + strings.Join(docsElems, ",") + ";"
+	_, err = unwrappedTx.Exec(ctx, query, eventsArgs...)
+	if err != nil {
+		return xerrors.Errorf("unable to exec query, query:%s, err:%w", query, err)
+	}
+
 	return err
 }
 
@@ -252,7 +280,7 @@ func (r *Repo) TestExtractAllTreeNodes(tx repo.Tx, ctx context.Context) ([]model
 	unwrappedTx := tx.(pgx.Tx)
 	rows, err := unwrappedTx.Query(
 		ctx,
-		fmt.Sprintf(`SELECT depth, current_full_key, current_node_json FROM events WHERE depth=2 ORDER BY business_time DESC LIMIT 10;`),
+		fmt.Sprintf(`SELECT e.depth, e.current_full_key, d.body FROM events e INNER JOIN events_doc d ON e.current_full_key=d.current_full_key WHERE e.depth=2 ORDER BY e.business_time DESC LIMIT 10;`),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to select nodes: %w", err)

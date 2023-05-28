@@ -23,16 +23,21 @@ func SerializeKey(sourceID int, parentComplexKey *model.ComplexKey, key model.ID
 		CurrentFullKey:  parentComplexKey.MakeSubkey(key.ID()).FullKey(),
 		CurrentNodeJSON: string(JSONObj),
 		BusinessTime:    businessTime,
+		IsDoc:           false,
 	}
 }
 
 func serializeInternalNode(sourceID int, el *node) *model.DBTreeNode {
-	return SerializeKey(sourceID, el.ComplexKey().ParentKey(), el.Key())
+	result := SerializeKey(sourceID, el.ComplexKey().ParentKey(), el.Key())
+	result.IsDoc = false
+	return result
 }
 
 func SerializeDoc(sourceID int, fullKey string, key model.IDable) *model.DBTreeNode {
 	complexKey, _ := model.ParseComplexKey(fullKey)
-	return SerializeKey(sourceID, complexKey.ParentKey(), key)
+	result := SerializeKey(sourceID, complexKey.ParentKey(), key)
+	result.IsDoc = true
+	return result
 }
 
 func serialize(sourceID int, in *Tree) []model.DBTreeNode {

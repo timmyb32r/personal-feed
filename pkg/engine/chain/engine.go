@@ -93,9 +93,9 @@ func (e *Engine) RunOnce(ctx context.Context, op operation.Operation) error {
 					}
 				}
 				fullKey := model.NewComplexKey("ROOT").MakeSubkey(currID).MakeSubkey("doc").FullKey()
-				dbTreeNode := tree.SerializeDoc(e.source.ID, fullKey, currDoc)
+				dbDocNode := tree.SerializeDoc(e.source.ID, fullKey, currDoc)
 
-				err = e.db.InsertNewTreeNodes(ctx, e.source.ID, []model.DBTreeNode{newItem, *dbTreeNode})
+				err = e.db.InsertNewTreeNodes(ctx, e.source.ID, []model.DBTreeNode{newItem, *dbDocNode})
 				if err != nil {
 					return xerrors.Errorf("unable to insert items, err: %w", err)
 				}
