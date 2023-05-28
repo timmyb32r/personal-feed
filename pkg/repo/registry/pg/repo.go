@@ -133,7 +133,7 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID in
 	for _, node := range nodes {
 		currentNodeJSON := node.CurrentNodeJSON
 		if node.IsDoc {
-			currentNodeJSON = ""
+			currentNodeJSON = "{}"
 		}
 
 		eventsElems = append(eventsElems, fmt.Sprintf("($%d, $%d, $%d, $%d, now(), $%d)", eventsIndex, eventsIndex+1, eventsIndex+2, eventsIndex+3, eventsIndex+4))
