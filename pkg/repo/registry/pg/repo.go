@@ -140,7 +140,7 @@ func (r *Repo) InsertNewTreeNodesTx(tx repo.Tx, ctx context.Context, sourceID in
 		eventsArgs = append(eventsArgs, sourceID, node.Depth, node.CurrentFullKey, currentNodeJSON, node.BusinessTime)
 		eventsIndex += 5
 
-		docsElems = append(eventsElems, fmt.Sprintf("($%d, $%d)", docsIndex, docsIndex+1))
+		docsElems = append(docsElems, fmt.Sprintf("($%d, $%d)", docsIndex, docsIndex+1))
 		docsArgs = append(docsArgs, node.CurrentFullKey, node.CurrentNodeJSON)
 		docsIndex += 2
 	}
