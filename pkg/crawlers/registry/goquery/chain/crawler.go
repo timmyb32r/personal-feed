@@ -30,21 +30,23 @@ func (n stNt) GetBusinessTime() *time.Time {
 	return n.BusinessTime
 }
 
-type stContent struct {
+type StContent struct {
 	Link         string
 	BusinessTime *time.Time
+	Author       string
+	HeaderText   string
 	Content      string
 }
 
-func (n stContent) ID() string {
+func (n StContent) ID() string {
 	return n.Link
 }
 
-func (n stContent) GetBusinessTime() *time.Time {
+func (n StContent) GetBusinessTime() *time.Time {
 	return n.BusinessTime
 }
 
-func (n stContent) SetBusinessTime(in *time.Time) {
+func (n StContent) SetBusinessTime(in *time.Time) {
 	inCopy := *in
 	n.BusinessTime = &inCopy
 }
@@ -58,6 +60,7 @@ type Crawler struct {
 	itemHeaderExtractor       *extractors.GoQueryProgram
 	itemLinkExtractor         *extractors.GoQueryProgram
 	itemBusinessTimeExtractor *extractors.GoQueryProgram
+	itemAuthorExtractor       *extractors.GoQueryProgram
 	nextLinkExtractor         *extractors.GoQueryProgram
 	contentExtractor          *extractors.GoQueryProgram
 }
@@ -69,7 +72,7 @@ func (c *Crawler) CrawlerType() int {
 func (c *Crawler) Layers() []model.IDable {
 	return []model.IDable{
 		stNt{Link: "", HeaderText: ""},
-		stContent{Link: "", Content: ""},
+		StContent{Link: "", Content: ""},
 	}
 }
 
@@ -130,12 +133,30 @@ func (c *Crawler) getPost(page, link string) ([]model.IDable, string, string, er
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to convert html page to doc, link: %s, err: %w", link, err)
 	}
-	content, err := goquerywrapper.ExtractByProgram(doc, c.contentExtractor)
+	res, err := goquerywrapper.ExtractItemsByProgram(c.logger, doc, ":root", c.itemHeaderExtractor, c.contentExtractor, c.itemBusinessTimeExtractor, c.itemAuthorExtractor)
 	if err != nil {
 		return nil, "", "", xerrors.Errorf("unable to extract content from link %s, err: %w", link, err)
 	}
+	if len(res) != 1 {
+		return nil, "", "", xerrors.Errorf("len(res) != 1. unable to extract content/time/author from doc, link: %s, err: %w", link, err)
+	}
+	currRes := res[0]
+	if len(currRes) != 4 {
+		return nil, "", "", xerrors.Errorf("len(currRes) != 3. unable to extract content/time/author from doc, link: %s, err: %w", link, err)
+	}
+
+	businessTimeVal, err := dateparse.ParseAny(currRes[2])
+	if err != nil {
+		return nil, "", "", xerrors.Errorf("unable to parse business time, str: %s, err: %s", currRes[2], err)
+	}
 	result := []model.IDable{
-		stContent{Link: link, Content: content},
+		StContent{
+			Link:         link,
+			BusinessTime: &businessTimeVal,
+			Author:       currRes[3],
+			HeaderText:   currRes[0],
+			Content:      currRes[1],
+		},
 	}
 	return result, "", "", nil
 }
@@ -177,6 +198,10 @@ func NewCrawlerImpl(source model.Source, logger *logrus.Logger, htmlGetter URLGe
 	if err != nil {
 		return nil, xerrors.Errorf("unable to create program for item.business_time, err: %w", err)
 	}
+	itemAuthorExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.Item.Author)
+	if err != nil {
+		return nil, xerrors.Errorf("unable to create program for item.author, err: %w", err)
+	}
 	nextLinkExtractor, err := extractors.NewProgramFromProgram(commonGoparseSource.NextLink)
 	if err != nil {
 		return nil, xerrors.Errorf("unable to create program for item.next, err: %w", err)
@@ -194,6 +219,7 @@ func NewCrawlerImpl(source model.Source, logger *logrus.Logger, htmlGetter URLGe
 
 		itemHeaderExtractor:       itemHeaderExtractor,
 		itemLinkExtractor:         itemLinkExtractor,
+		itemAuthorExtractor:       itemAuthorExtractor,
 		itemBusinessTimeExtractor: itemBusinessTimeExtractor,
 		nextLinkExtractor:         nextLinkExtractor,
 		contentExtractor:          contentExtractor,
